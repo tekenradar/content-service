@@ -1,9 +1,13 @@
 package main
 
 import (
+	"strconv"
+	//"time"
 
 	"github.com/coneno/logger"
 	"github.com/tekenradar/content-service/pkg/dbs/contentdb"
+	"github.com/tekenradar/content-service/pkg/types"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func main() {
@@ -16,5 +20,26 @@ func main() {
 
 	logger.Debug.Println(contentDBService)
 
+	testMapData := types.MapData{
+		Time: 12323123123,
+		Lng: 21.232332,
+		Lat: 5.34534,
+		Type: "TB",
+	}
+	
+	//var (
+	//testInstanceID = strconv.FormatInt(time.Now().Unix(), 10)
+	//)
+
+	testInstanceID := strconv.FormatInt(1650359785,10)
+
+	id, err := contentDBService.AddMapData(testInstanceID, testMapData)
+
+	if err != nil {
+		logger.Error.Printf("unexpected error: %s", err.Error())
+	}
+	if len(id) < 2 || id == primitive.NilObjectID.Hex() {
+		logger.Error.Printf("unexpected id: %s", id)
+	}
 
 }

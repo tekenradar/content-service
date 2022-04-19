@@ -55,6 +55,6 @@ func (dbService *ContentDBService) collectionRefStudyInfos(instanceID string) *m
 }
 
 // DB utils
-//func (dbService *StudyDBService) getContext() (ctx context.Context, cancel context.CancelFunc) {
-//	return context.WithTimeout(context.Background(), time.Duration(dbService.timeout)*time.Second)
-//}
+func (dbService *ContentDBService) getContext() (ctx context.Context, cancel context.CancelFunc) {
+	return context.WithTimeout(context.Background(), time.Duration(dbService.timeout)*time.Second)
+}
