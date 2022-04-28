@@ -4,6 +4,8 @@ go 1.16
 
 require (
 	github.com/coneno/logger v1.2.1
+	github.com/gin-contrib/cors v1.3.1
+	github.com/gin-gonic/gin v1.7.7
 	github.com/google/go-cmp v0.5.5 // indirect
 	go.mongodb.org/mongo-driver v1.8.4
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
