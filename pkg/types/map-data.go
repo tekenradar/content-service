@@ -1,6 +1,6 @@
 package types
 
-type MapData struct {
+type TickBiteMapData struct {
 
 	Time int64   `bson:"time,omitempty"`
 	Lng  float64 `bson:"lng"`            //longitude

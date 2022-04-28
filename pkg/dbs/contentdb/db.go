@@ -50,8 +50,8 @@ func NewContentDBService(configs types.DBConfig) *ContentDBService {
 }
 
 //new Collection
-func (dbService *ContentDBService) collectionRefStudyInfos(instanceID string) *mongo.Collection {
-	return dbService.DBClient.Database(dbService.DBNamePrefix + instanceID + "_contentDB").Collection("map-infos")
+func (dbService *ContentDBService) collectionRefTickBiteMapInfos(instanceID string) *mongo.Collection {
+	return dbService.DBClient.Database(dbService.DBNamePrefix + instanceID + "_contentDB").Collection("tick-bite-map-infos")
 }
 
 // DB utils
