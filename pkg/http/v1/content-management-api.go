@@ -7,14 +7,17 @@ import (
 
 func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 	data := rg.Group("/data")
-	data.POST("/tb-report", mw.RequirePayload(), h.addTBReportHandl)
-
+	// data.Use(mw.HasAPIKey(h.apiKeys.readWrite))
+	{
+		data.POST("/tb-report", mw.RequirePayload(), h.addTBReportHandl)
+	}
 }
 
 func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
-	// TODO: check if api key valid
 	// TODO: for debugging, sve POST body as a JSON
 	// TODO: POST body -> TBmapdata
+
+	// id, err := h.contentDB.AddTickBiteMapData(...)
 	// TODO: save TBmapdata into DB
 	// TODO: prepare response
 }

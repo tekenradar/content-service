@@ -12,5 +12,7 @@ func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
 
 func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 	// TODO: fetch data from DB
+	//t := time.Now() - 1561651651
+	//points, err = h.contentDB.FindTickBiteMapDataByTime(...)
 	// TODO: prepare response
 }
