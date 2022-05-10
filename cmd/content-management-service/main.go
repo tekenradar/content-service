@@ -23,6 +23,7 @@ func main() {
 
 	contentDBService := contentdb.NewContentDBService(conf.ContentDBConfig)
 
+
 	// Start webserver
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
@@ -39,6 +40,7 @@ func main() {
 
 	v1APIHandlers := v1.NewHTTPHandler(contentDBService, conf.APIKeyForReadOnly, conf.APIKeyForRW)
 	v1APIHandlers.AddContentManagementAPI(v1Root)
+	v1APIHandlers.AddContentAPI(v1Root)
 
 	logger.Info.Printf("gateway listening on port %s", conf.Port)
 	logger.Error.Fatal(router.Run(":" + conf.Port))
