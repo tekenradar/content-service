@@ -9,13 +9,16 @@ import (
 
 	"github.com/coneno/logger"
 	"github.com/gin-gonic/gin"
+	mw "github.com/tekenradar/content-service/pkg/http/middlewares"
 	"github.com/tekenradar/content-service/pkg/types"
 )
 
 func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
 	data := rg.Group("/data")
-	data.GET("/tb-report", h.getTBReportMapDataHandl)
-
+	data.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
+	{
+		data.GET("/tb-report", h.getTBReportMapDataHandl)
+	}
 }
 
 func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
