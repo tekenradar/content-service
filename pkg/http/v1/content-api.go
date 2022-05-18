@@ -1,8 +1,6 @@
 package v1
 
 import (
-	//"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -23,7 +21,6 @@ func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
 
 func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 
-	//fetch data from DB
 	nParam := c.DefaultQuery("weeks", "4")
 	n, err := strconv.Atoi(nParam)
 	if err != nil {
@@ -31,17 +28,17 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 	}
 
 	t := time.Now().AddDate(0, 0, -(n * 7)).Unix()
-	//testInstanceID := strconv.FormatInt(1650359785, 10)
 	InstanceID := c.DefaultQuery("InstanceID", "")
+
+	//fetch data from DB
 	points, err := h.contentDB.FindTickBiteMapDataByTime(InstanceID, t)
 
-	//prepare response in TBReportMapData Format
 	if err != nil {
-		fmt.Println("error:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch data from db"})
 		return
 	}
 
+	//prepare response in TBReportMapData Format
 	var tempReportMapData types.ReportMapData
 	tempReportMapData.Slider.MinLabel = "-" + strconv.Itoa(n) + " weken"
 	tempReportMapData.Slider.MaxLabel = "nu"
