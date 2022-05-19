@@ -6,9 +6,6 @@ require (
 	github.com/coneno/logger v1.2.1
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.7
-	github.com/google/go-cmp v0.5.5 // indirect
+	github.com/influenzanet/study-service v1.0.4-0.20220512080314-bab2e8f3b39a
 	go.mongodb.org/mongo-driver v1.8.4
-	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 )
