@@ -16,7 +16,7 @@ func (dbService *ContentDBService) AddTickBiteMapData(instanceID string, tickBit
 	return id.Hex(), err
 }
 
-func (dbService *ContentDBService) FindTickBiteMapDataByTime(instanceID string, time int64) (tickBiteMapData []types.TickBiteMapData, err error) {
+func (dbService *ContentDBService) FindTickBiteMapDataNewerThan(instanceID string, time int64) (tickBiteMapData []types.TickBiteMapData, err error) {
 	ctx, cancel := dbService.getContext()
 	defer cancel()
 

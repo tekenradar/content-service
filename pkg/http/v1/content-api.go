@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,14 +25,14 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 	nParam := c.DefaultQuery("weeks", "4")
 	n, err := strconv.Atoi(nParam)
 	if err != nil {
-		logger.Error.Fatal("Could not read weeks parameter")
+		logger.Error.Println("Could not read weeks parameter")
 	}
 
 	t := time.Now().AddDate(0, 0, -(n * 7)).Unix()
 	InstanceID := c.DefaultQuery("InstanceID", "")
 
 	//fetch data from DB
-	points, err := h.contentDB.FindTickBiteMapDataByTime(InstanceID, t)
+	points, err := h.contentDB.FindTickBiteMapDataNewerThan(InstanceID, t)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch data from db"})
@@ -39,35 +40,39 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 	}
 
 	//prepare response in TBReportMapData Format
-	var tempReportMapData types.ReportMapData
-	tempReportMapData.Slider.MinLabel = "-" + strconv.Itoa(n) + " weken"
-	tempReportMapData.Slider.MaxLabel = "nu"
-	tempReportMapData.Slider.Labels = make([]string, n)
+	var rmd types.ReportMapData
+	rmd.Slider.MinLabel = fmt.Sprintf("-%d weken", n)
+	rmd.Slider.MaxLabel = "nu"
+	rmd.Slider.Labels = make([]string, n)
 
 	timeFormat := "02-01-2006"
 
 	for i := 0; i < n; i++ {
-		tempReportMapData.Slider.Labels[i] = time.Now().AddDate(0, 0, -(7*(n-i))).Format(timeFormat) + "  -  " + time.Now().AddDate(0, 0, -(7*(n-i-1)+1)).Format(timeFormat)
-		//add todays date to current week
+		start_date_days := -(7 * (n - i))
+		end_date_days := -(7*(n-i-1) + 1)
 		if i == (n - 1) {
-			tempReportMapData.Slider.Labels[i] = time.Now().AddDate(0, 0, -(7*(n-i))).Format(timeFormat) + "  -  " + time.Now().AddDate(0, 0, -(7*(n-1-i))).Format(timeFormat)
+			end_date_days = -(7 * (n - 1 - i)) //add todays date to current week
 		}
+		rmd.Slider.Labels[i] = time.Now().AddDate(0, 0, start_date_days).Format(timeFormat) + "  -  " + time.Now().AddDate(0, 0, end_date_days).Format(timeFormat)
 	}
 
-	tempReportMapData.Series = make([][]types.TickBiteMapData, n)
+	rmd.Series = make([][]types.TickBiteMapData, n)
+	for i := range rmd.Series {
+		rmd.Series[i] = make([]types.TickBiteMapData, 0)
+	}
 
 	for _, point := range points {
 
-		TempMapData := types.TickBiteMapData{
+		md := types.TickBiteMapData{
 			Lat:  point.Lat,
 			Lng:  point.Lng,
 			Type: point.Type,
 		}
 		tDays := time.Unix(point.Time, 0).Sub(time.Now().AddDate(0, 0, -n*7)).Hours() / 24
 		index := int64(tDays / 7)
-		tempReportMapData.Series[index] = append(tempReportMapData.Series[index], TempMapData)
+		rmd.Series[index] = append(rmd.Series[index], md)
 	}
 
-	c.JSON(http.StatusOK, tempReportMapData)
+	c.JSON(http.StatusOK, rmd)
 
 }
