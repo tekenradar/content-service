@@ -32,14 +32,14 @@ func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
 		return
 	}
 
-	TBdata, err := studyEventToTBMapData(req)
+	TBmapData, err := studyEventToTBMapData(req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// save TBmapdata into DB
-	_, err = h.contentDB.AddTickBiteMapData(req.InstanceID, TBdata)
+	_, err = h.contentDB.AddTickBiteMapData(req.InstanceID, TBmapData)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to add data to data base"})
 		return
@@ -73,8 +73,10 @@ func studyEventToTBMapData(event studyengine.ExternalEventPayload) (tickBiteMapD
 		return cstypes.TickBiteMapData{}, err
 	}
 
+	time := event.Response.SubmittedAt
+
 	return cstypes.TickBiteMapData{
-		Time: event.Response.SubmittedAt, //time extra
+		Time: time,
 		Lat:  lat,
 		Lng:  lng,
 		Type: rtype}, nil
@@ -88,16 +90,23 @@ func getReportType(key string) (Rtype string, err error) {
 		return "EM", nil
 	} else if strings.Contains(key, "Fever") {
 		return "FE", nil
-	} else {
+	} else if strings.Contains(key, "LB") {
 		return "Other", nil
-	} //TODO: different error handling here
+	} else if strings.Contains(key, "CH") {
+		return "Other", nil
+	} else {
+		return "", errors.New("Could not allocate type value")
+	}
 }
 
 func parseResponseValueAsFloat(mapItem []types.ResponseItem, name string) (value float64, err error) {
 	for _, mapItem := range mapItem {
 		if mapItem.Key == name {
 			val, err := strconv.ParseFloat(mapItem.Value, 64)
-			return val, err
+			if err != nil {
+				return val, errors.New("Could not parse response value to float")
+			}
+			return val, nil
 		}
 	}
 	return 0, errors.New("Could not find response value")

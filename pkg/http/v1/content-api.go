@@ -63,12 +63,16 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 
 	for _, point := range points {
 
+		end_date_days := -(7*n + 1)
+		if time.Unix(point.Time, 0).Format("02-01-2006") == time.Now().Format("02-01-2006") {
+			end_date_days = -(7 * n) //handle different if date is today
+		}
 		md := types.TickBiteMapData{
 			Lat:  point.Lat,
 			Lng:  point.Lng,
 			Type: point.Type,
 		}
-		tDays := time.Unix(point.Time, 0).Sub(time.Now().AddDate(0, 0, -n*7)).Hours() / 24
+		tDays := time.Unix(point.Time, 0).Sub(time.Now().AddDate(0, 0, end_date_days)).Hours() / 24
 		index := int64(tDays / 7)
 		rmd.Series[index] = append(rmd.Series[index], md)
 	}
