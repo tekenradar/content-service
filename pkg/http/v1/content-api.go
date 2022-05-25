@@ -72,8 +72,14 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 			Lng:  point.Lng,
 			Type: point.Type,
 		}
-		tDays := time.Unix(point.Time, 0).Sub(time.Now().AddDate(0, 0, end_date_days)).Hours() / 24
+		t := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 23, 59, 59, 999999999, time.Local)
+		tDays := time.Unix(point.Time, 0).Sub(t.AddDate(0, 0, end_date_days)).Hours() / 24
 		index := int64(tDays / 7)
+		if index >= int64(n) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "could not allocate map data to time interval"})
+			return
+		}
+
 		rmd.Series[index] = append(rmd.Series[index], md)
 	}
 
