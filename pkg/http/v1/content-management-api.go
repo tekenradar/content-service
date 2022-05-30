@@ -20,6 +20,7 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 	data.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
 	{
 		data.POST("/tb-report", mw.RequirePayload(), h.addTBReportHandl)
+		data.POST("/initialise-dbcollection", mw.RequirePayload(), h.loadTBMapDataHandl)
 	}
 }
 
@@ -126,4 +127,26 @@ func findResponseItem(response []types.SurveyItemResponse, itemKey string) (item
 		}
 	}
 	return []types.ResponseItem{}, errors.New("Could not find response item")
+}
+
+func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
+
+	var TBMapData []cstypes.TickBiteMapData
+
+	if err := c.ShouldBindJSON(&TBMapData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	for i := range TBMapData {
+
+		if _, err := h.contentDB.AddTickBiteMapData(c.DefaultQuery("InstanceID", ""), TBMapData[i]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to add data to data base"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Map Data successfully loaded in database"})
+
 }
