@@ -4,8 +4,23 @@ import (
 	"github.com/tekenradar/content-service/pkg/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+func (dbService *ContentDBService) CreateIndex(instanceID string) error {
+	ctx, cancel := dbService.getContext()
+	defer cancel()
+
+	_, err := dbService.collectionRefTickBiteMapInfos(instanceID).Indexes().CreateOne(
+		ctx, mongo.IndexModel{
+			Keys: bson.M{
+				"time": -1,
+			},
+		},
+	)
+	return err
+}
 
 func (dbService *ContentDBService) AddTickBiteMapData(instanceID string, tickBiteMapData types.TickBiteMapData) (string, error) {
 	ctx, cancel := dbService.getContext()

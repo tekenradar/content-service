@@ -7,6 +7,7 @@ import (
 
 	"net/http"
 
+	"github.com/coneno/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/influenzanet/study-service/pkg/studyengine"
 	"github.com/influenzanet/study-service/pkg/types"
@@ -130,23 +131,25 @@ func findResponseItem(response []types.SurveyItemResponse, itemKey string) (item
 }
 
 func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
+	instanceID := c.DefaultQuery("instanceID", "")
+	// TODO: check if instanceID exists to prevent empty instance ids
 
 	var TBMapData []cstypes.TickBiteMapData
-
 	if err := c.ShouldBindJSON(&TBMapData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	for i := range TBMapData {
-
-		if _, err := h.contentDB.AddTickBiteMapData(c.DefaultQuery("InstanceID", ""), TBMapData[i]); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to add data to data base"})
-			return
+	for i, d := range TBMapData {
+		if _, err := h.contentDB.AddTickBiteMapData(instanceID, d); err != nil {
+			logger.Error.Printf("Unable to add data to db: [%d]: %v", i, d)
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Map Data successfully loaded in database"})
+	err := h.contentDB.CreateIndex(instanceID)
+	if err != nil {
+		logger.Error.Printf("Unexpected error: %v", err)
+	}
 
+	c.JSON(http.StatusOK, gin.H{"message": "Map Data loading finished"})
 }
