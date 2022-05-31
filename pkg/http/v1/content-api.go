@@ -21,7 +21,6 @@ func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
 }
 
 func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
-
 	nParam := c.DefaultQuery("weeks", "4")
 	n, err := strconv.Atoi(nParam)
 	if err != nil {
@@ -62,7 +61,6 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 	}
 
 	for _, point := range points {
-
 		end_date_days := -(7*n + 1)
 		if time.Unix(point.Time, 0).Format("02-01-2006") == time.Now().Format("02-01-2006") {
 			end_date_days = -(7 * n) //handle different if date is today
