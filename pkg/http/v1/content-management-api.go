@@ -2,6 +2,10 @@ package v1
 
 import (
 	"net/http"
+	"path"
+	"path/filepath"
+	"strconv"
+	"time"
 
 	"github.com/coneno/logger"
 	"github.com/gin-gonic/gin"
@@ -17,6 +21,11 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 	{
 		data.POST("/tb-report", mw.RequirePayload(), h.addTBReportHandl)
 		data.POST("/initialise-dbcollection", mw.RequirePayload(), h.loadTBMapDataHandl)
+	}
+	files := rg.Group("/files")
+	files.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
+	{
+		files.POST("/upload", mw.RequirePayload(), h.uploadFileHandl)
 	}
 }
 
@@ -68,4 +77,31 @@ func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Map Data loading finished"})
+}
+
+func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": "No file is received",
+		})
+		return
+	}
+
+	// Retrieve file information
+	extension := filepath.Ext(file.Filename)
+	//unique name for file
+	newFileName := strconv.FormatInt(time.Now().Unix(), 16) + extension
+
+	dst := path.Join("./", newFileName)
+
+	if err := c.SaveUploadedFile(file, dst); err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": "Unable to save the file",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "File has been successfully uploaded."})
 }
