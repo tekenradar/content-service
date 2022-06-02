@@ -2,6 +2,7 @@ package v1
 
 import (
 	"net/http"
+	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -88,17 +89,22 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 		return
 	}
 
-	// Retrieve file information
 	extension := filepath.Ext(file.Filename)
 	//unique name for file
 	newFileName := strconv.FormatInt(time.Now().Unix(), 16) + extension
 
-	dst := path.Join("./", newFileName)
+	err = os.MkdirAll(h.assetsDir, os.ModePerm)
+	if err != nil {
+		logger.Info.Printf("Error uploading file: err at target path mkdir %v", err.Error())
+	}
+
+	dst := path.Join(h.assetsDir, newFileName)
 
 	if err := c.SaveUploadedFile(file, dst); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"message": "Unable to save the file",
 		})
+		logger.Info.Println(dst)
 		return
 	}
 

@@ -10,7 +10,6 @@ import (
 	"github.com/tekenradar/content-service/pkg/types"
 )
 
-
 const (
 	ENV_LOG_LEVEL = "LOG_LEVEL"
 
@@ -18,6 +17,7 @@ const (
 	ENV_CORS_ALLOW_ORIGINS          = "CORS_ALLOW_ORIGINS"
 	ENV_API_KEYS_READ_ONLY          = "API_KEYS_READ_ONLY"
 	ENV_API_KEYS_READ_WRITE         = "API_KEYS_READ_WRITE"
+	ENV_ASSETS_DIR                  = "ASSETS_DIR"
 
 	ENV_CONTENT_DB_CONNECTION_STR    = "CONTENT_DB_CONNECTION_STR"
 	ENV_CONTENT_DB_USERNAME          = "CONTENT_DB_USERNAME"
@@ -35,6 +35,7 @@ type Config struct {
 	AllowOrigins      []string
 	APIKeyForRW       []string
 	APIKeyForReadOnly []string
+	AssetsDir         string
 	LogLevel          logger.LogLevel
 	ContentDBConfig   types.DBConfig
 }
@@ -45,13 +46,13 @@ func InitConfig() Config {
 	conf.AllowOrigins = strings.Split(os.Getenv(ENV_CORS_ALLOW_ORIGINS), ",")
 	conf.APIKeyForRW = strings.Split(os.Getenv(ENV_API_KEYS_READ_WRITE), ",")
 	conf.APIKeyForReadOnly = strings.Split(os.Getenv(ENV_API_KEYS_READ_ONLY), ",")
+	conf.AssetsDir = os.Getenv(ENV_ASSETS_DIR)
 
 	conf.LogLevel = getLogLevel()
 	conf.ContentDBConfig = getContentDBConfig()
 
 	return conf
 }
-
 
 func getLogLevel() logger.LogLevel {
 	switch os.Getenv(ENV_LOG_LEVEL) {
@@ -78,7 +79,6 @@ func getContentDBConfig() types.DBConfig {
 	}
 	URI := fmt.Sprintf(`mongodb%s://%s:%s@%s`, prefix, username, password, connStr)
 
-
 	var err error
 	Timeout, err := strconv.Atoi(os.Getenv(ENV_DB_TIMEOUT))
 	if err != nil {
@@ -104,4 +104,3 @@ func getContentDBConfig() types.DBConfig {
 		DBNamePrefix:    DBNamePrefix,
 	}
 }
-
