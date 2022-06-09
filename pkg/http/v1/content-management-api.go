@@ -86,7 +86,7 @@ func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
 func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "No file is received",
 		})
 		return
