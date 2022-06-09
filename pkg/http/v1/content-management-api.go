@@ -5,14 +5,16 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/coneno/logger"
 	"github.com/gin-gonic/gin"
+	"github.com/h2non/filetype"
 	"github.com/influenzanet/study-service/pkg/studyengine"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	mw "github.com/tekenradar/content-service/pkg/http/middlewares"
+	"github.com/tekenradar/content-service/pkg/types"
 	cstypes "github.com/tekenradar/content-service/pkg/types"
 )
 
@@ -93,15 +95,52 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	}
 
 	extension := filepath.Ext(file.Filename)
-	//unique name for file
-	newFileName := strconv.FormatInt(time.Now().Unix(), 16) + extension
+
+	//get file type
+	fileContent, _ := file.Open()
+	buffer := make([]byte, 512)
+	_, err = fileContent.Read(buffer)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "error reading file",
+		})
+		return
+	}
+	kind, _ := filetype.Match(buffer)
+	if kind == filetype.Unknown {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Unknown file type",
+		})
+		return
+	}
+
+	// Create file reference entry in DB
+	instanceID := c.DefaultQuery("instanceID", "")
+	if instanceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
+		return
+	}
+	db_ID := primitive.NewObjectID()
+	newFileName := db_ID.Hex() + extension
+	dst := path.Join(h.assetsDir, newFileName)
+	_, err = h.contentDB.SaveFileInfo(instanceID, types.FileInfo{
+		ID:         db_ID,
+		Path:       dst,
+		UploadedAt: time.Now().Unix(),
+		FileType:   kind.MIME.Value,
+		Name:       newFileName,
+		Size:       int32(file.Size),
+	})
+	if err != nil {
+		logger.Error.Printf("Error UploadFile: %v", err.Error())
+		return
+	}
 
 	err = os.MkdirAll(h.assetsDir, os.ModePerm)
 	if err != nil {
 		logger.Info.Printf("Error uploading file: err at target path mkdir %v", err.Error())
+		return
 	}
-
-	dst := path.Join(h.assetsDir, newFileName)
 
 	if err := c.SaveUploadedFile(file, dst); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
