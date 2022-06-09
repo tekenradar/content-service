@@ -58,7 +58,10 @@ func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
 
 func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
 	instanceID := c.DefaultQuery("instanceID", "")
-	// TODO: check if instanceID exists to prevent empty instance ids
+	if instanceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
+		return
+	}
 
 	var TBMapData []cstypes.TickBiteMapData
 	if err := c.ShouldBindJSON(&TBMapData); err != nil {
