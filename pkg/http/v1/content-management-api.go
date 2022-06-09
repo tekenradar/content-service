@@ -104,7 +104,7 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	dst := path.Join(h.assetsDir, newFileName)
 
 	if err := c.SaveUploadedFile(file, dst); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Unable to save the file",
 		})
 		logger.Info.Println(dst)
