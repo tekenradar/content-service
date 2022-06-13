@@ -31,6 +31,19 @@ func (dbService *ContentDBService) SaveFileInfo(instanceID string, fileInfo type
 	).Decode(&elem)
 	return elem, err
 }
+
+func (dbService *ContentDBService) FindFileInfo(instanceID string, fileID string) (types.FileInfo, error) {
+	ctx, cancel := dbService.getContext()
+	defer cancel()
+
+	_id, _ := primitive.ObjectIDFromHex(fileID)
+	filter := bson.M{"_id": _id}
+
+	elem := types.FileInfo{}
+	err := dbService.collectionRefUploadedFiles(instanceID).FindOne(ctx, filter).Decode(&elem)
+	return elem, err
+}
+
 func (dbService *ContentDBService) DeleteFileInfo(instanceID string, fileID string) (count int64, err error) {
 	ctx, cancel := dbService.getContext()
 	defer cancel()
