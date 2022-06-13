@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/coneno/logger"
@@ -29,6 +30,7 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 	files.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
 	{
 		files.POST("/upload", mw.RequirePayload(), h.uploadFileHandl)
+		files.DELETE("/delete", mw.RequirePayload(), h.deleteFileHandl)
 	}
 }
 
@@ -152,4 +154,44 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "File has been successfully uploaded."})
+}
+
+func (h *HttpEndpoints) deleteFileHandl(c *gin.Context) {
+	instanceID := c.DefaultQuery("instanceID", "")
+	if instanceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
+		return
+	}
+	fileID := c.DefaultQuery("fileID", "")
+	if fileID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "fileID is empty"})
+		return
+	}
+
+	fileIDs := strings.Split(fileID, ",")
+
+	for _, id := range fileIDs {
+		fileInfo, err := h.contentDB.FindFileInfo(instanceID, id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"unexpected error": "file info not found"})
+			return
+		}
+
+		// delete file
+		err = os.Remove(fileInfo.Path)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"unexpected error: %v": err})
+			continue
+		}
+
+		// remove file info
+		count, err := h.contentDB.DeleteFileInfo(instanceID, id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"unexpected error: %v": err})
+			continue
+		}
+		logger.Debug.Printf("%d file info removed", count)
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "File has been successfully removed."})
 }
