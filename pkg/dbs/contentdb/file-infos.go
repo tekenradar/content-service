@@ -1,6 +1,8 @@
 package contentdb
 
 import (
+	"errors"
+
 	"github.com/tekenradar/content-service/pkg/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -28,4 +30,17 @@ func (dbService *ContentDBService) SaveFileInfo(instanceID string, fileInfo type
 		ctx, filter, fileInfo, &options,
 	).Decode(&elem)
 	return elem, err
+}
+func (dbService *ContentDBService) DeleteFileInfo(instanceID string, fileID string) (count int64, err error) {
+	ctx, cancel := dbService.getContext()
+	defer cancel()
+
+	if fileID == "" {
+		return 0, errors.New("file id must be defined")
+	}
+	_id, _ := primitive.ObjectIDFromHex(fileID)
+	filter := bson.M{"_id": _id}
+
+	res, err := dbService.collectionRefUploadedFiles(instanceID).DeleteOne(ctx, filter)
+	return res.DeletedCount, err
 }

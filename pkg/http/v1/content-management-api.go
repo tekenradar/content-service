@@ -153,3 +153,43 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "File has been successfully uploaded."})
 }
+
+
+func (h *HttpEndpoints) deleteFileHandl(c *gin.Context) {
+	instanceID := c.DefaultQuery("instanceID", "")
+	if instanceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
+		return
+	}
+	fileID := c.DefaultQuery("fileID","")
+	if fileID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "fileID is empty"})
+		return
+	}
+
+	//for _, id := range req.FileIds {
+		fileInfo, err := h.contentDB.FindFileInfo(instanceID, fileID)
+		if err != nil {
+			logger.Error.Printf("unexpected error: %v", err)
+			return nil, status.Error(codes.Internal, "file info not found")
+		}
+
+		// delete file
+		err = os.Remove(filepath.Join(s.persistentStorageConfig.RootPath, fileInfo.Path))
+		if err != nil {
+			logger.Error.Printf("unexpected error: %v", err)
+			continue
+		//}
+
+		os.Remove(filepath.Join(s.persistentStorageConfig.RootPath, fileInfo.PreviewPath))
+
+		// remove file info
+		c, err := s.studyDBservice.DeleteFileInfo(req.Token.InstanceId, req.StudyKey, id)
+		if err != nil {
+			logger.Error.Printf("unexpected error: %v", err)
+			continue
+		}
+		logger.Debug.Printf("%d file info removed", c)
+	}
+	return &api.ServiceStatus{}, nil
+}
