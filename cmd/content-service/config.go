@@ -16,7 +16,6 @@ const (
 	ENV_CONTENT_SERVICE_LISTEN_PORT = "CONTENT_SERVICE_LISTEN_PORT"
 	ENV_CORS_ALLOW_ORIGINS          = "CORS_ALLOW_ORIGINS"
 	ENV_API_KEYS_READ_ONLY          = "API_KEYS_READ_ONLY"
-	ENV_API_KEYS_READ_WRITE         = "API_KEYS_READ_WRITE"
 	ENV_ASSETS_DIR                  = "ASSETS_DIR"
 
 	ENV_CONTENT_DB_CONNECTION_STR    = "CONTENT_DB_CONNECTION_STR"
@@ -33,8 +32,8 @@ const (
 type Config struct {
 	Port              string
 	AllowOrigins      []string
-	APIKeyForRW       []string
 	APIKeyForReadOnly []string
+	APIKeyForRW       []string
 	AssetsDir         string
 	LogLevel          logger.LogLevel
 	ContentDBConfig   types.DBConfig
@@ -44,8 +43,8 @@ func InitConfig() Config {
 	conf := Config{}
 	conf.Port = os.Getenv(ENV_CONTENT_SERVICE_LISTEN_PORT)
 	conf.AllowOrigins = strings.Split(os.Getenv(ENV_CORS_ALLOW_ORIGINS), ",")
-	conf.APIKeyForRW = strings.Split(os.Getenv(ENV_API_KEYS_READ_WRITE), ",")
 	conf.APIKeyForReadOnly = strings.Split(os.Getenv(ENV_API_KEYS_READ_ONLY), ",")
+	conf.APIKeyForRW = strings.Split("", ",")
 	conf.AssetsDir = os.Getenv(ENV_ASSETS_DIR)
 
 	conf.LogLevel = getLogLevel()
