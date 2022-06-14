@@ -57,3 +57,36 @@ func (dbService *ContentDBService) DeleteFileInfo(instanceID string, fileID stri
 	res, err := dbService.collectionRefUploadedFiles(instanceID).DeleteOne(ctx, filter)
 	return res.DeletedCount, err
 }
+
+func (dbService *ContentDBService) GetFileInfoList(instanceID string) (fileInfoList []types.FileInfo, err error) {
+	ctx, cancel := dbService.getContext()
+	defer cancel()
+
+	batchSize := int32(32)
+	opts := options.FindOptions{
+		BatchSize: &batchSize,
+	}
+	cur, err := dbService.collectionRefUploadedFiles(instanceID).Find(ctx, nil, &opts)
+
+	if err != nil {
+		return fileInfoList, err
+	}
+	defer cur.Close(ctx)
+
+	fileInfoList = []types.FileInfo{}
+	for cur.Next(ctx) {
+		var result types.FileInfo
+		err := cur.Decode(&result)
+
+		if err != nil {
+			return fileInfoList, err
+		}
+
+		fileInfoList = append(fileInfoList, result)
+	}
+	if err := cur.Err(); err != nil {
+		return fileInfoList, err
+	}
+
+	return fileInfoList, nil
+}
