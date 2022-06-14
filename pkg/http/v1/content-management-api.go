@@ -125,7 +125,7 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	db_ID := primitive.NewObjectID()
 	newFileName := db_ID.Hex() + extension
 	dst := path.Join(h.assetsDir, newFileName)
-	_, err = h.contentDB.SaveFileInfo(instanceID, types.FileInfo{
+	fi, err := h.contentDB.SaveFileInfo(instanceID, types.FileInfo{
 		ID:         db_ID,
 		Path:       dst,
 		UploadedAt: time.Now().Unix(),
@@ -141,6 +141,11 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	err = os.MkdirAll(h.assetsDir, os.ModePerm)
 	if err != nil {
 		logger.Info.Printf("Error uploading file: err at target path mkdir %v", err.Error())
+		//if error delete db object
+		_, err = h.contentDB.DeleteFileInfo(instanceID, fi.ID.String())
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"unexpected error: %v": err})
+		}
 		return
 	}
 
@@ -149,6 +154,11 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 			"message": "Unable to save the file",
 		})
 		logger.Info.Println(dst)
+		//if error delete db object
+		_, err = h.contentDB.DeleteFileInfo(instanceID, fi.ID.String())
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"unexpected error: %v": err})
+		}
 		return
 	}
 
