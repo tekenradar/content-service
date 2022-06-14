@@ -32,6 +32,10 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 		files.POST("/upload", mw.RequirePayload(), h.uploadFileHandl)
 		files.DELETE("/delete", mw.RequirePayload(), h.deleteFileHandl)
 	}
+	files.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
+	{
+		files.GET("/fileInfo", mw.RequirePayload(), h.getFileInfosHandl)
+	}
 }
 
 func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
@@ -204,4 +208,18 @@ func (h *HttpEndpoints) deleteFileHandl(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "File has been successfully removed."})
+}
+
+func (h *HttpEndpoints) getFileInfosHandl(c *gin.Context) {
+	InstanceID := c.DefaultQuery("instanceID", "")
+
+	//fetch data from DB
+	fileInfoList, err := h.contentDB.GetFileInfoList(InstanceID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch data from db"})
+		return
+	}
+
+	c.JSON(http.StatusOK, fileInfoList)
 }
