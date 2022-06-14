@@ -62,11 +62,12 @@ func (dbService *ContentDBService) GetFileInfoList(instanceID string) (fileInfoL
 	ctx, cancel := dbService.getContext()
 	defer cancel()
 
+	filter := bson.M{}
 	batchSize := int32(32)
 	opts := options.FindOptions{
 		BatchSize: &batchSize,
 	}
-	cur, err := dbService.collectionRefUploadedFiles(instanceID).Find(ctx, nil, &opts)
+	cur, err := dbService.collectionRefUploadedFiles(instanceID).Find(ctx, filter, &opts)
 
 	if err != nil {
 		return fileInfoList, err
