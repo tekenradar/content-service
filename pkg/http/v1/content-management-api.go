@@ -148,7 +148,7 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 		//if error delete db object
 		_, err = h.contentDB.DeleteFileInfo(instanceID, fi.ID.String())
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"unexpected error: %v": err})
+			c.JSON(http.StatusBadRequest, gin.H{"unexpected error": err.Error()})
 		}
 		return
 	}
@@ -161,7 +161,7 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 		//if error delete db object
 		_, err = h.contentDB.DeleteFileInfo(instanceID, fi.ID.String())
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"unexpected error: %v": err})
+			c.JSON(http.StatusBadRequest, gin.H{"unexpected error": err.Error()})
 		}
 		return
 	}
@@ -194,14 +194,14 @@ func (h *HttpEndpoints) deleteFileHandl(c *gin.Context) {
 		// delete file
 		err = os.Remove(fileInfo.Path)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"unexpected error: %v": err})
+			c.JSON(http.StatusBadRequest, gin.H{"unexpected error": err.Error()})
 			continue
 		}
 
 		// remove file info
 		count, err := h.contentDB.DeleteFileInfo(instanceID, id)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"unexpected error: %v": err})
+			c.JSON(http.StatusBadRequest, gin.H{"unexpected error": err.Error()})
 			continue
 		}
 		logger.Debug.Printf("%d file info removed", count)
