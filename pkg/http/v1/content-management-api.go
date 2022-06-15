@@ -30,11 +30,11 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 	files.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
 	{
 		files.POST("/upload", mw.RequirePayload(), h.uploadFileHandl)
-		files.DELETE("/delete", mw.RequirePayload(), h.deleteFileHandl)
+		files.DELETE("", mw.RequirePayload(), h.deleteFileHandl)
 	}
 	files.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
 	{
-		files.GET("/fileInfo", mw.RequirePayload(), h.getFileInfosHandl)
+		files.GET("/:instanceID", mw.RequirePayload(), h.getFileInfosHandl)
 	}
 }
 
@@ -211,7 +211,11 @@ func (h *HttpEndpoints) deleteFileHandl(c *gin.Context) {
 }
 
 func (h *HttpEndpoints) getFileInfosHandl(c *gin.Context) {
-	InstanceID := c.DefaultQuery("instanceID", "")
+	InstanceID := c.Param("instanceID")
+	if InstanceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
+		return
+	}
 
 	//fetch data from DB
 	fileInfoList, err := h.contentDB.GetFileInfoList(InstanceID)
