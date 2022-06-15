@@ -28,7 +28,7 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 	}
 
 	t := time.Now().AddDate(0, 0, -(n * 7)).Unix()
-	InstanceID := c.DefaultQuery("InstanceID", "")
+	InstanceID := c.DefaultQuery("instanceID", "")
 
 	//fetch data from DB
 	points, err := h.contentDB.FindTickBiteMapDataNewerThan(InstanceID, t)
