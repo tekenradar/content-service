@@ -20,21 +20,25 @@ import (
 )
 
 func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
-	data := rg.Group("/data")
+	studyevents := rg.Group("/study-events-handlers")
+	studyevents.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
+	{
+		studyevents.POST("/tb-map-point-aggregator", mw.RequirePayload(), h.addTBReportHandl)
+	}
+	data := rg.Group("/:instanceID/data")
 	data.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
 	{
-		data.POST("/tb-report", mw.RequirePayload(), h.addTBReportHandl)
-		data.POST("/initialise-dbcollection", mw.RequirePayload(), h.loadTBMapDataHandl)
+		data.POST("/tb-map-data", mw.RequirePayload(), h.loadTBMapDataHandl)
 	}
-	files := rg.Group("/files")
+	files := rg.Group("/:instanceID/files")
 	files.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
 	{
-		files.POST("/upload", mw.RequirePayload(), h.uploadFileHandl)
+		files.POST("", mw.RequirePayload(), h.uploadFileHandl)
 		files.DELETE("", mw.RequirePayload(), h.deleteFileHandl)
 	}
 	files.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
 	{
-		files.GET("/:instanceID", mw.RequirePayload(), h.getFileInfosHandl)
+		files.GET("", mw.RequirePayload(), h.getFileInfosHandl)
 	}
 }
 
@@ -65,7 +69,7 @@ func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
 }
 
 func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
-	instanceID := c.DefaultQuery("instanceID", "")
+	instanceID := c.Param("instanceID")
 	if instanceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
 		return
@@ -121,7 +125,7 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	}
 
 	// Create file reference entry in DB
-	instanceID := c.DefaultQuery("instanceID", "")
+	instanceID := c.Param("instanceID")
 	if instanceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
 		return
@@ -171,7 +175,7 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 }
 
 func (h *HttpEndpoints) deleteFileHandl(c *gin.Context) {
-	instanceID := c.DefaultQuery("instanceID", "")
+	instanceID := c.Param("instanceID")
 	if instanceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
 		return
@@ -211,14 +215,14 @@ func (h *HttpEndpoints) deleteFileHandl(c *gin.Context) {
 }
 
 func (h *HttpEndpoints) getFileInfosHandl(c *gin.Context) {
-	InstanceID := c.Param("instanceID")
-	if InstanceID == "" {
+	instanceID := c.Param("instanceID")
+	if instanceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
 		return
 	}
 
 	//fetch data from DB
-	fileInfoList, err := h.contentDB.GetFileInfoList(InstanceID)
+	fileInfoList, err := h.contentDB.GetFileInfoList(instanceID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch data from db"})
