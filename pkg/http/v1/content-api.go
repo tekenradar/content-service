@@ -18,6 +18,8 @@ func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
 	{
 		data.GET("/tb-report", h.getTBReportMapDataHandl)
 	}
+	files := rg.Group("/files")
+	files.Static("/assets", h.assetsDir) 
 }
 
 func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
