@@ -20,7 +20,7 @@ import (
 )
 
 func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
-	studyevents := rg.Group("/study-events-handlers")
+	studyevents := rg.Group("/study-event-handlers")
 	studyevents.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
 	{
 		studyevents.POST("/tb-map-point-aggregator", mw.RequirePayload(), h.addTBReportHandl)
