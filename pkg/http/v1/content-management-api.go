@@ -40,6 +40,11 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 	{
 		files.GET("", mw.RequirePayload(), h.getFileInfosHandl)
 	}
+	newsitems := rg.Group("/:instanceID/news-items")
+	newsitems.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
+	{
+		newsitems.GET("", mw.RequirePayload(), h.getNewsItemsHandl)
+	}
 }
 
 func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
@@ -230,4 +235,22 @@ func (h *HttpEndpoints) getFileInfosHandl(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, fileInfoList)
+}
+
+func (h *HttpEndpoints) getNewsItemsHandl(c *gin.Context) {
+	instanceID := c.Param("instanceID")
+	if instanceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
+		return
+	}
+
+	//fetch data from DB
+	newsItemList, err := h.contentDB.GetNewsItemsList(instanceID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch data from db"})
+		return
+	}
+
+	c.JSON(http.StatusOK, newsItemList)
 }
