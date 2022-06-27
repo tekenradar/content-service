@@ -58,6 +58,10 @@ func (dbService *ContentDBService) collectionRefUploadedFiles(instanceID string)
 	return dbService.DBClient.Database(dbService.DBNamePrefix + instanceID + "_contentDB").Collection("uploaded-file-infos")
 }
 
+
+func (dbService *ContentDBService) collectionRefNewsItems(instanceID string) *mongo.Collection {
+	return dbService.DBClient.Database(dbService.DBNamePrefix + instanceID + "_contentDB").Collection("news-items")
+}
 // DB utils
 func (dbService *ContentDBService) getContext() (ctx context.Context, cancel context.CancelFunc) {
 	return context.WithTimeout(context.Background(), time.Duration(dbService.timeout)*time.Second)
