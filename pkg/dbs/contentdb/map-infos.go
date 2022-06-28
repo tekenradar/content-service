@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (dbService *ContentDBService) CreateIndex(instanceID string) error {
+func (dbService *ContentDBService) CreateIndexTickBiteMapInfos(instanceID string) error {
 	ctx, cancel := dbService.getContext()
 	defer cancel()
 
