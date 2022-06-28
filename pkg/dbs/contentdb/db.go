@@ -16,7 +16,7 @@ type ContentDBService struct {
 	DBNamePrefix string
 }
 
-func NewContentDBService(configs types.DBConfig) *ContentDBService {
+func NewContentDBService(configs types.DBConfig, InstanceIDsTickBiteMapInfo []string, InstanceIDsFileInfo []string, InstanceIDsNewsItems []string) *ContentDBService {
 	var err error
 	dbClient, err := mongo.NewClient(
 		options.Client().ApplyURI(configs.URI),
@@ -42,11 +42,22 @@ func NewContentDBService(configs types.DBConfig) *ContentDBService {
 		logger.Error.Fatal("fail to connect to DB: " + err.Error())
 	}
 
-	return &ContentDBService{
+	ContentDBService := &ContentDBService{
 		DBClient:     dbClient,
 		timeout:      configs.Timeout,
 		DBNamePrefix: configs.DBNamePrefix,
 	}
+	for i, d := range InstanceIDsTickBiteMapInfo {
+		if err := ContentDBService.CreateIndexTickBiteMapInfos(d); err != nil {
+			logger.Error.Printf("Unable to create index model for TickBiteMapInfo: [%d]: %v", i, d)
+		}
+	}
+	for i, d := range InstanceIDsNewsItems {
+		if err := ContentDBService.CreateIndexNewsItemInfos(d); err != nil {
+			logger.Error.Printf("Unable to create index model for NewsItems: [%d]: %v", i, d)
+		}
+	}
+	return ContentDBService
 }
 
 //new Collection
@@ -58,10 +69,10 @@ func (dbService *ContentDBService) collectionRefUploadedFiles(instanceID string)
 	return dbService.DBClient.Database(dbService.DBNamePrefix + instanceID + "_contentDB").Collection("uploaded-file-infos")
 }
 
-
 func (dbService *ContentDBService) collectionRefNewsItems(instanceID string) *mongo.Collection {
 	return dbService.DBClient.Database(dbService.DBNamePrefix + instanceID + "_contentDB").Collection("news-items")
 }
+
 // DB utils
 func (dbService *ContentDBService) getContext() (ctx context.Context, cancel context.CancelFunc) {
 	return context.WithTimeout(context.Background(), time.Duration(dbService.timeout)*time.Second)
