@@ -21,7 +21,7 @@ func main() {
 
 	logger.SetLevel(conf.LogLevel)
 
-	contentDBService := contentdb.NewContentDBService(conf.ContentDBConfig)
+	contentDBService := contentdb.NewContentDBService(conf.ContentDBConfig, conf.InstanceIDsTickBiteMapInfo, conf.InstanceIDsFileInfo, conf.InstanceIDsNewsItems)
 
 	// Start webserver
 	router := gin.Default()
