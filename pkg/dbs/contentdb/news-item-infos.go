@@ -3,8 +3,23 @@ package contentdb
 import (
 	"github.com/tekenradar/content-service/pkg/types"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+func (dbService *ContentDBService) CreateIndexNewsItemInfos(instanceID string) error {
+	ctx, cancel := dbService.getContext()
+	defer cancel()
+
+	_, err := dbService.collectionRefNewsItems(instanceID).Indexes().CreateOne(
+		ctx, mongo.IndexModel{
+			Keys: bson.M{
+				"time": -1,
+			},
+		},
+	)
+	return err
+}
 
 func (dbService *ContentDBService) GetNewsItemsList(instanceID string) (NewsItemList []types.NewsItem, err error) {
 	ctx, cancel := dbService.getContext()
