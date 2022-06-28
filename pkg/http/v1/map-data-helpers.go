@@ -73,15 +73,11 @@ func parseResponseValueAsFloat(mapItem []types.ResponseItem, name string) (value
 
 func findResponseItem(response []types.SurveyItemResponse, itemKey string) (item []types.ResponseItem, err error) {
 	for _, resp := range response {
-
 		if strings.Contains(resp.Key, itemKey) {
-
 			for _, item := range resp.Response.Items {
-
 				if item.Key == "map" {
 					return item.Items, nil
 				}
-
 			}
 		}
 	}

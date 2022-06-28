@@ -25,11 +25,13 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 	{
 		studyevents.POST("/tb-map-point-aggregator", mw.RequirePayload(), h.addTBReportHandl)
 	}
+
 	data := rg.Group("/:instanceID/data")
 	data.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
 	{
 		data.POST("/tb-map-data", mw.RequirePayload(), h.loadTBMapDataHandl)
 	}
+
 	files := rg.Group("/:instanceID/files")
 	files.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
 	{
@@ -40,6 +42,7 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 	{
 		files.GET("", mw.RequirePayload(), h.getFileInfosHandl)
 	}
+
 	newsitems := rg.Group("/:instanceID/news-items")
 	newsitems.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
 	{
@@ -138,6 +141,7 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	db_ID := primitive.NewObjectID()
 	newFileName := db_ID.Hex() + extension
 	dst := path.Join(h.assetsDir, newFileName)
+
 	fi, err := h.contentDB.SaveFileInfo(instanceID, types.FileInfo{
 		ID:         db_ID,
 		Path:       dst,
@@ -185,6 +189,7 @@ func (h *HttpEndpoints) deleteFileHandl(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
 		return
 	}
+
 	fileID := c.DefaultQuery("fileID", "")
 	if fileID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "fileID is empty"})
@@ -228,7 +233,6 @@ func (h *HttpEndpoints) getFileInfosHandl(c *gin.Context) {
 
 	//fetch data from DB
 	fileInfoList, err := h.contentDB.GetFileInfoList(instanceID)
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch data from db"})
 		return
@@ -246,7 +250,6 @@ func (h *HttpEndpoints) getNewsItemsHandl(c *gin.Context) {
 
 	//fetch data from DB
 	newsItemList, err := h.contentDB.GetNewsItemsList(instanceID)
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch data from db"})
 		return
