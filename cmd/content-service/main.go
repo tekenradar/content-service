@@ -31,7 +31,7 @@ func main() {
 		// AllowAllOrigins: true,
 		AllowOrigins:     conf.AllowOrigins,
 		AllowMethods:     []string{"GET"},
-		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type", "Content-Length"},
+		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type", "Content-Length", "Api-Key"},
 		ExposeHeaders:    []string{"Authorization", "Content-Type", "Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
