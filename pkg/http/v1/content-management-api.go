@@ -167,15 +167,17 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	}
 
 	if err := c.SaveUploadedFile(file, dst); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Unable to save the file",
-		})
-		logger.Info.Println(dst)
+		logger.Error.Println("error while saving file at ", dst)
+
 		//if error delete db object
 		_, err = h.contentDB.DeleteFileInfo(instanceID, fi.ID.String())
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"unexpected error": err.Error()})
+			return
 		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Unable to save the file",
+		})
 		return
 	}
 
