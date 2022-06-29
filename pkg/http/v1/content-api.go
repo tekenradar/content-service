@@ -19,7 +19,7 @@ func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
 		data.GET("/tb-report", h.getTBReportMapDataHandl)
 	}
 	files := rg.Group("/files")
-	files.Static("/assets", h.assetsDir) 
+	files.Static("/assets", h.assetsDir)
 }
 
 func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
@@ -38,7 +38,6 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 
 	//fetch data from DB
 	points, err := h.contentDB.FindTickBiteMapDataNewerThan(instanceID, t)
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch data from db"})
 		return

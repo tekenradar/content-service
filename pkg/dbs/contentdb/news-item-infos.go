@@ -21,7 +21,7 @@ func (dbService *ContentDBService) CreateIndexNewsItemInfos(instanceID string) e
 	return err
 }
 
-func (dbService *ContentDBService) GetNewsItemsList(instanceID string) (NewsItemList []types.NewsItem, err error) {
+func (dbService *ContentDBService) GetNewsItemsList(instanceID string) (newsItemList []types.NewsItem, err error) {
 	ctx, cancel := dbService.getContext()
 	defer cancel()
 
@@ -33,24 +33,24 @@ func (dbService *ContentDBService) GetNewsItemsList(instanceID string) (NewsItem
 	cur, err := dbService.collectionRefNewsItems(instanceID).Find(ctx, filter, &opts)
 
 	if err != nil {
-		return NewsItemList, err
+		return newsItemList, err
 	}
 	defer cur.Close(ctx)
 
-	NewsItemList = []types.NewsItem{}
+	newsItemList = []types.NewsItem{}
 	for cur.Next(ctx) {
 		var result types.NewsItem
-		err := cur.Decode(&result)
 
+		err := cur.Decode(&result)
 		if err != nil {
-			return NewsItemList, err
+			return newsItemList, err
 		}
 
-		NewsItemList = append(NewsItemList, result)
+		newsItemList = append(newsItemList, result)
 	}
 	if err := cur.Err(); err != nil {
-		return NewsItemList, err
+		return newsItemList, err
 	}
 
-	return NewsItemList, nil
+	return newsItemList, nil
 }
