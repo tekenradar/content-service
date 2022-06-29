@@ -16,7 +16,7 @@ type ContentDBService struct {
 	DBNamePrefix string
 }
 
-func NewContentDBService(configs types.DBConfig, InstanceIDsTickBiteMapInfo []string, InstanceIDsFileInfo []string, InstanceIDsNewsItems []string) *ContentDBService {
+func NewContentDBService(configs types.DBConfig, InstanceIDs []string) *ContentDBService {
 	var err error
 	dbClient, err := mongo.NewClient(
 		options.Client().ApplyURI(configs.URI),
@@ -47,12 +47,12 @@ func NewContentDBService(configs types.DBConfig, InstanceIDsTickBiteMapInfo []st
 		timeout:      configs.Timeout,
 		DBNamePrefix: configs.DBNamePrefix,
 	}
-	for i, d := range InstanceIDsTickBiteMapInfo {
+	for i, d := range InstanceIDs {
 		if err := ContentDBService.CreateIndexTickBiteMapInfos(d); err != nil {
 			logger.Error.Printf("Unable to create index model for TickBiteMapInfo: [%d]: %v", i, d)
 		}
 	}
-	for i, d := range InstanceIDsNewsItems {
+	for i, d := range InstanceIDs {
 		if err := ContentDBService.CreateIndexNewsItemInfos(d); err != nil {
 			logger.Error.Printf("Unable to create index model for NewsItems: [%d]: %v", i, d)
 		}

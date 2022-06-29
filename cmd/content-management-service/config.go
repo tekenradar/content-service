@@ -18,6 +18,7 @@ const (
 	ENV_API_KEYS_READ_ONLY                     = "API_KEYS_READ_ONLY"
 	ENV_API_KEYS_READ_WRITE                    = "API_KEYS_READ_WRITE"
 	ENV_ASSETS_DIR                             = "ASSETS_DIR"
+	ENV_INSTANCE_IDS                           = "INSTANCE_IDS"
 
 	ENV_CONTENT_DB_CONNECTION_STR    = "CONTENT_DB_CONNECTION_STR"
 	ENV_CONTENT_DB_USERNAME          = "CONTENT_DB_USERNAME"
@@ -27,24 +28,18 @@ const (
 	ENV_DB_IDLE_CONN_TIMEOUT         = "DB_IDLE_CONN_TIMEOUT"
 	ENV_DB_MAX_POOL_SIZE             = "DB_MAX_POOL_SIZE"
 	ENV_DB_NAME_PREFIX               = "DB_DB_NAME_PREFIX"
-
-	ENV_INSTANCE_ID_TICK_BITE_MAP_INFOS = "INSTANCE_ID_TICK_BITE_MAP_INFOS"
-	ENV_INSTANCE_ID_FILE_INFOS          = "INSTANCE_ID_FILE_INFOS"
-	ENV_INSTANCE_ID_NEWS_ITEMS          = "INSTANCE_ID_NEWS_ITEMS"
 )
 
 // Config is the structure that holds all global configuration data
 type Config struct {
-	Port                       string
-	AllowOrigins               []string
-	APIKeyForRW                []string
-	APIKeyForReadOnly          []string
-	AssetsDir                  string
-	InstanceIDsTickBiteMapInfo []string
-	InstanceIDsFileInfo        []string
-	InstanceIDsNewsItems       []string
-	LogLevel                   logger.LogLevel
-	ContentDBConfig            types.DBConfig
+	Port              string
+	AllowOrigins      []string
+	APIKeyForRW       []string
+	APIKeyForReadOnly []string
+	AssetsDir         string
+	InstanceIDs       []string
+	LogLevel          logger.LogLevel
+	ContentDBConfig   types.DBConfig
 }
 
 func InitConfig() Config {
@@ -54,9 +49,7 @@ func InitConfig() Config {
 	conf.APIKeyForRW = strings.Split(os.Getenv(ENV_API_KEYS_READ_WRITE), ",")
 	conf.APIKeyForReadOnly = strings.Split(os.Getenv(ENV_API_KEYS_READ_ONLY), ",")
 	conf.AssetsDir = os.Getenv(ENV_ASSETS_DIR)
-	conf.InstanceIDsTickBiteMapInfo = strings.Split(os.Getenv(ENV_INSTANCE_ID_TICK_BITE_MAP_INFOS), ",")
-	conf.InstanceIDsFileInfo = strings.Split(os.Getenv(ENV_INSTANCE_ID_FILE_INFOS), ",")
-	conf.InstanceIDsNewsItems = strings.Split(os.Getenv(ENV_INSTANCE_ID_NEWS_ITEMS), ",")
+	conf.InstanceIDs = strings.Split(os.Getenv(ENV_INSTANCE_IDS), ",")
 
 	conf.LogLevel = getLogLevel()
 	conf.ContentDBConfig = getContentDBConfig()
