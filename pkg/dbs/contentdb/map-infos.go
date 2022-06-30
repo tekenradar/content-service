@@ -27,6 +27,9 @@ func (dbService *ContentDBService) AddTickBiteMapData(instanceID string, tickBit
 	defer cancel()
 
 	res, err := dbService.collectionRefTickBiteMapInfos(instanceID).InsertOne(ctx, tickBiteMapData)
+	if err != nil {
+		return "", err
+	}
 	id := res.InsertedID.(primitive.ObjectID)
 	return id.Hex(), err
 }
