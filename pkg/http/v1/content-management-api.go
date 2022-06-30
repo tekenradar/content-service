@@ -14,10 +14,9 @@ import (
 	"github.com/influenzanet/study-service/pkg/studyengine"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	mw "github.com/tekenradar/content-service/pkg/http/middlewares"
 	"github.com/tekenradar/content-service/pkg/http/helpers"
+	mw "github.com/tekenradar/content-service/pkg/http/middlewares"
 	"github.com/tekenradar/content-service/pkg/types"
-	cstypes "github.com/tekenradar/content-service/pkg/types"
 )
 
 func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
@@ -84,7 +83,7 @@ func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
 		return
 	}
 
-	var TBMapData []cstypes.TickBiteMapData
+	var TBMapData []types.TickBiteMapData
 	if err := c.ShouldBindJSON(&TBMapData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
