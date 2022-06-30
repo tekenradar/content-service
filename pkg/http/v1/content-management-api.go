@@ -15,6 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	mw "github.com/tekenradar/content-service/pkg/http/middlewares"
+	"github.com/tekenradar/content-service/pkg/http/helpers"
 	"github.com/tekenradar/content-service/pkg/types"
 	cstypes "github.com/tekenradar/content-service/pkg/types"
 )
@@ -57,7 +58,7 @@ func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
 		return
 	}
 
-	TBmapData, err := studyEventToTBMapData(req)
+	TBmapData, err := helpers.StudyEventToTBMapData(req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
