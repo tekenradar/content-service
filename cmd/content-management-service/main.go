@@ -20,6 +20,9 @@ func main() {
 	conf := InitConfig()
 
 	logger.SetLevel(conf.LogLevel)
+	if !conf.DebugMode {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	contentDBService := contentdb.NewContentDBService(conf.ContentDBConfig, conf.InstanceIDs)
 

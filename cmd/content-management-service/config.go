@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	ENV_LOG_LEVEL = "LOG_LEVEL"
+	ENV_LOG_LEVEL      = "LOG_LEVEL"
+	ENV_GIN_DEBUG_MODE = "GIN_DEBUG_MODE"
 
 	ENV_CONTENT_MANAGEMENT_SERVICE_LISTEN_PORT = "CONTENT_MANAGEMENT_SERVICE_LISTEN_PORT"
 	ENV_CORS_ALLOW_ORIGINS                     = "CORS_ALLOW_ORIGINS"
@@ -40,6 +41,7 @@ type Config struct {
 	InstanceIDs       []string
 	LogLevel          logger.LogLevel
 	ContentDBConfig   types.DBConfig
+	DebugMode         bool
 }
 
 func InitConfig() Config {
@@ -53,6 +55,7 @@ func InitConfig() Config {
 
 	conf.LogLevel = getLogLevel()
 	conf.ContentDBConfig = getContentDBConfig()
+	conf.DebugMode = os.Getenv(ENV_GIN_DEBUG_MODE) == "true"
 
 	return conf
 }
