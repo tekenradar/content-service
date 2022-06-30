@@ -1,4 +1,4 @@
-package v1
+package helpers
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 	cstypes "github.com/tekenradar/content-service/pkg/types"
 )
 
-func studyEventToTBMapData(event studyengine.ExternalEventPayload) (tickBiteMapData cstypes.TickBiteMapData, err error) {
+func StudyEventToTBMapData(event studyengine.ExternalEventPayload) (tickBiteMapData cstypes.TickBiteMapData, err error) {
 	item, err := findResponseItem(event.Response.Responses, "TBLoc.Q2")
 	if err != nil {
 		return cstypes.TickBiteMapData{}, err
@@ -82,4 +82,13 @@ func findResponseItem(response []types.SurveyItemResponse, itemKey string) (item
 		}
 	}
 	return []types.ResponseItem{}, errors.New("Could not find response item")
+}
+
+func CheckInstanceID(validIDs[]string,instanceID string) (err error) {
+	for _, el := range validIDs {
+		if instanceID == el {
+			return nil
+		}
+	}
+	return errors.New("A valid InstanceID is missing")
 }
