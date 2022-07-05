@@ -36,17 +36,17 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 	files.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
 	{
 		files.POST("", mw.RequirePayload(), h.uploadFileHandl)
-		files.DELETE("", mw.RequirePayload(), h.deleteFileHandl)
+		files.DELETE("", h.deleteFileHandl)
 	}
 	files.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
 	{
-		files.GET("", mw.RequirePayload(), h.getFileInfosHandl)
+		files.GET("", h.getFileInfosHandl)
 	}
 
 	newsitems := rg.Group("/:instanceID/news-items")
 	newsitems.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
 	{
-		newsitems.GET("", mw.RequirePayload(), h.getNewsItemsHandl)
+		newsitems.GET("", h.getNewsItemsHandl)
 	}
 }
 
