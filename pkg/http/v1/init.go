@@ -8,13 +8,15 @@ type HttpEndpoints struct {
 		readOnly  []string
 		readWrite []string
 	}
-	assetsDir string
+	instanceIDs []string
+	assetsDir   string
 }
 
 func NewHTTPHandler(
 	contentDB *contentdb.ContentDBService,
 	readOnlyAPIKeys []string,
 	readWriteAPIKeys []string,
+	instanceIDs []string,
 	assetsDir string,
 ) *HttpEndpoints {
 	return &HttpEndpoints{
@@ -26,6 +28,7 @@ func NewHTTPHandler(
 			readOnly:  readOnlyAPIKeys,
 			readWrite: readWriteAPIKeys,
 		},
-		assetsDir: assetsDir,
+		instanceIDs: instanceIDs,
+		assetsDir:   assetsDir,
 	}
 }

@@ -42,7 +42,7 @@ func main() {
 	router.GET("/", healthCheckHandle)
 	v1Root := router.Group("/v1")
 
-	v1APIHandlers := v1.NewHTTPHandler(contentDBService, conf.APIKeyForReadOnly, conf.APIKeyForRW, conf.AssetsDir)
+	v1APIHandlers := v1.NewHTTPHandler(contentDBService, conf.APIKeyForReadOnly, conf.APIKeyForRW, conf.InstanceIDs, conf.AssetsDir)
 	v1APIHandlers.AddContentAPI(v1Root)
 
 	logger.Info.Printf("gateway listening on port %s", conf.Port)
