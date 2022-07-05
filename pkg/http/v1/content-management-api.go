@@ -26,27 +26,30 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 		studyevents.POST("/tb-map-point-aggregator", mw.RequirePayload(), h.addTBReportHandl)
 	}
 
-	data := rg.Group("/:instanceID/data")
-	data.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
+	instanceGroup := rg.Group("/:instanceID")
+	instanceGroup.Use((mw.HasValidInstanceID(h.instanceIDs)))
 	{
-		data.POST("/tb-map-data", mw.RequirePayload(), h.loadTBMapDataHandl)
-	}
+		data := instanceGroup.Group("/data")
+		data.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
+		{
+			data.POST("/tb-map-data", mw.RequirePayload(), h.loadTBMapDataHandl)
+		}
 
-	files := rg.Group("/:instanceID/files")
-	files.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
-	{
-		files.POST("", mw.RequirePayload(), h.uploadFileHandl)
-		files.DELETE("", h.deleteFileHandl)
-	}
-	files.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
-	{
-		files.GET("", h.getFileInfosHandl)
-	}
-
-	newsitems := rg.Group("/:instanceID/news-items")
-	newsitems.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
-	{
-		newsitems.GET("", h.getNewsItemsHandl)
+		files := instanceGroup.Group("/files")
+		files.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
+		{
+			files.POST("", mw.RequirePayload(), h.uploadFileHandl)
+			files.DELETE("", h.deleteFileHandl)
+		}
+		files.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
+		{
+			files.GET("", h.getFileInfosHandl)
+		}
+		newsitems := instanceGroup.Group("/news-items")
+		newsitems.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
+		{
+			newsitems.GET("", h.getNewsItemsHandl)
+		}
 	}
 }
 
@@ -56,7 +59,12 @@ func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	InstanceID := req.InstanceID
+	err := helpers.CheckInstanceID(h.instanceIDs, InstanceID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	TBmapData, err := helpers.StudyEventToTBMapData(req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -64,7 +72,7 @@ func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
 	}
 
 	// save TBmapdata into DB
-	_, err = h.contentDB.AddTickBiteMapData(req.InstanceID, TBmapData)
+	_, err = h.contentDB.AddTickBiteMapData(InstanceID, TBmapData)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to add data to data base"})
 		return
@@ -78,10 +86,6 @@ func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
 
 func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
 	instanceID := c.Param("instanceID")
-	if instanceID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
-		return
-	}
 
 	var TBMapData []types.TickBiteMapData
 	if err := c.ShouldBindJSON(&TBMapData); err != nil {
@@ -134,10 +138,6 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 
 	// Create file reference entry in DB
 	instanceID := c.Param("instanceID")
-	if instanceID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
-		return
-	}
 	db_ID := primitive.NewObjectID()
 	newFileName := db_ID.Hex() + extension
 	dst := path.Join(h.assetsDir, newFileName)
@@ -187,11 +187,6 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 
 func (h *HttpEndpoints) deleteFileHandl(c *gin.Context) {
 	instanceID := c.Param("instanceID")
-	if instanceID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
-		return
-	}
-
 	fileID := c.DefaultQuery("fileID", "")
 	if fileID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "fileID is empty"})
@@ -228,11 +223,6 @@ func (h *HttpEndpoints) deleteFileHandl(c *gin.Context) {
 
 func (h *HttpEndpoints) getFileInfosHandl(c *gin.Context) {
 	instanceID := c.Param("instanceID")
-	if instanceID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
-		return
-	}
-
 	//fetch data from DB
 	fileInfoList, err := h.contentDB.GetFileInfoList(instanceID)
 	if err != nil {
@@ -245,11 +235,6 @@ func (h *HttpEndpoints) getFileInfosHandl(c *gin.Context) {
 
 func (h *HttpEndpoints) getNewsItemsHandl(c *gin.Context) {
 	instanceID := c.Param("instanceID")
-	if instanceID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
-		return
-	}
-
 	//fetch data from DB
 	newsItemList, err := h.contentDB.GetNewsItemsList(instanceID)
 	if err != nil {
