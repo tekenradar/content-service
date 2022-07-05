@@ -13,10 +13,14 @@ import (
 )
 
 func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
-	data := rg.Group("/:instanceID/data")
-	data.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
+	instanceGroup := rg.Group("/:instanceID")
+	instanceGroup.Use((mw.HasValidInstanceID(h.instanceIDs)))
 	{
-		data.GET("/tb-report", h.getTBReportMapDataHandl)
+		data := instanceGroup.Group("/data")
+		data.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
+		{
+			data.GET("/tb-report", h.getTBReportMapDataHandl)
+		}
 	}
 	files := rg.Group("/files")
 	files.Static("/assets", h.assetsDir)
@@ -31,10 +35,6 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 
 	t := time.Now().AddDate(0, 0, -(n * 7)).Unix()
 	instanceID := c.Param("instanceID")
-	if instanceID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "instanceID is empty"})
-		return
-	}
 
 	//fetch data from DB
 	points, err := h.contentDB.FindTickBiteMapDataNewerThan(instanceID, t)
