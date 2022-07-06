@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/coneno/logger"
 	"github.com/influenzanet/study-service/pkg/studyengine"
 	"github.com/influenzanet/study-service/pkg/types"
 
@@ -84,11 +85,21 @@ func findResponseItem(response []types.SurveyItemResponse, itemKey string) (item
 	return []types.ResponseItem{}, errors.New("Could not find response item")
 }
 
-func CheckInstanceID(validIDs[]string,instanceID string) (err error) {
+func CheckInstanceID(validIDs []string, instanceID string) (err error) {
 	for _, el := range validIDs {
 		if instanceID == el {
 			return nil
 		}
 	}
 	return errors.New("A valid InstanceID is missing")
+}
+func CheckEmptyInstanceIDs(instanceIDs []string) {
+	if len(instanceIDs) == 0 {
+		logger.Error.Fatal("Couldn't read instance IDs.")
+	}
+	for _, el := range instanceIDs {
+		if el == "" {
+			logger.Error.Fatal("Couldn't read instance IDs.")
+		}
+	}
 }
