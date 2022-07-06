@@ -49,6 +49,7 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 		newsitems.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
 		{
 			newsitems.GET("", h.getNewsItemsHandl)
+			newsitems.POST("", h.addNewsItemHandl)
 		}
 	}
 }
@@ -243,4 +244,25 @@ func (h *HttpEndpoints) getNewsItemsHandl(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, newsItemList)
+}
+
+func (h *HttpEndpoints) addNewsItemHandl(c *gin.Context) {
+	var req types.NewsItem
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	instanceID := c.Param("instanceID")
+
+	// save TBmapdata into DB
+	_, err := h.contentDB.AddNewsItem(instanceID, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to add news item to data base"})
+		return
+	}
+
+	// prepare response
+	c.JSON(http.StatusOK, gin.H{
+		"message": "News Item successfully added to data base"})
+
 }
