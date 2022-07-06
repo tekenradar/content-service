@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/coneno/logger"
+	"github.com/tekenradar/content-service/pkg/http/helpers"
 	"github.com/tekenradar/content-service/pkg/types"
 )
 
@@ -51,7 +52,8 @@ func InitConfig() Config {
 	conf.APIKeyForRW = strings.Split(os.Getenv(ENV_API_KEYS_READ_WRITE), ",")
 	conf.APIKeyForReadOnly = strings.Split(os.Getenv(ENV_API_KEYS_READ_ONLY), ",")
 	conf.AssetsDir = os.Getenv(ENV_ASSETS_DIR)
-	conf.InstanceIDs = strings.Split(os.Getenv(ENV_INSTANCE_IDS), ",")
+	conf.InstanceIDs = helpers.TrimSpace(strings.Split(os.Getenv(ENV_INSTANCE_IDS), ","))
+	helpers.CheckEmptyInstanceIDs(conf.InstanceIDs)
 
 	conf.LogLevel = getLogLevel()
 	conf.ContentDBConfig = getContentDBConfig()
