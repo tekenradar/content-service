@@ -93,6 +93,14 @@ func CheckInstanceID(validIDs []string, instanceID string) (err error) {
 	}
 	return errors.New("A valid InstanceID is missing")
 }
+
+func TrimSpace(instanceIDs []string) (trimmedIDs []string) {
+	for i, el := range instanceIDs {
+		instanceIDs[i] = strings.TrimSpace(el)
+	}
+	return instanceIDs
+}
+
 func CheckEmptyInstanceIDs(instanceIDs []string) {
 	if len(instanceIDs) == 0 {
 		logger.Error.Fatal("Couldn't read instance IDs.")
