@@ -100,11 +100,6 @@ func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
 		}
 	}
 
-	err := h.contentDB.CreateIndexTickBiteMapInfos(instanceID)
-	if err != nil {
-		logger.Error.Printf("Unexpected error: %v", err)
-	}
-
 	c.JSON(http.StatusOK, gin.H{"message": "Map Data loading finished"})
 }
 
