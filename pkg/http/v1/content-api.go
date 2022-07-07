@@ -12,6 +12,15 @@ import (
 	"github.com/tekenradar/content-service/pkg/types"
 )
 
+type MapDataCache struct {
+	LastUpdated int64
+	Data        types.ReportMapData
+}
+
+var (
+	Cache map[string]map[int]MapDataCache
+)
+
 func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
 	instanceGroup := rg.Group("/:instanceID")
 	instanceGroup.Use((mw.HasValidInstanceID(h.instanceIDs)))
@@ -35,6 +44,17 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 
 	t := time.Now().AddDate(0, 0, -(n * 7)).Unix()
 	instanceID := c.Param("instanceID")
+
+	if Cache == nil {
+		Cache = make(map[string]map[int]MapDataCache)
+	} else {
+		if mdcache, ok := Cache[instanceID][n]; ok {
+			if time.Since(time.Unix(mdcache.LastUpdated, 0)).Seconds() < float64(h.mapDataStoringDuration) {
+				c.JSON(http.StatusOK, mdcache.Data)
+				return
+			}
+		}
+	}
 
 	//fetch data from DB
 	points, err := h.contentDB.FindTickBiteMapDataNewerThan(instanceID, t)
@@ -86,6 +106,11 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 		rmd.Series[index] = append(rmd.Series[index], md)
 	}
 
-	c.JSON(http.StatusOK, rmd)
+	Cache[instanceID] = make(map[int]MapDataCache)
+	Cache[instanceID][n] = MapDataCache{
+		LastUpdated: time.Now().Unix(),
+		Data:        rmd,
+	}
 
+	c.JSON(http.StatusOK, rmd)
 }
