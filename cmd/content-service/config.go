@@ -21,7 +21,7 @@ const (
 	ENV_ASSETS_DIR                  = "ASSETS_DIR"
 	ENV_INSTANCE_IDS                = "INSTANCE_IDS"
 
-	ENV_MAP_DATA_STORING_DURATION_IN_SECONDS = "MAP_DATA_STORING_DURATION_IN_SECONDS"
+	ENV_MAP_DATA_CACHE_LIFETIME_IN_SECONDS = "MAP_DATA_CACHE_LIFETIME_IN_SECONDS"
 
 	ENV_CONTENT_DB_CONNECTION_STR    = "CONTENT_DB_CONNECTION_STR"
 	ENV_CONTENT_DB_USERNAME          = "CONTENT_DB_USERNAME"
@@ -35,16 +35,16 @@ const (
 
 // Config is the structure that holds all global configuration data
 type Config struct {
-	Port                   string
-	AllowOrigins           []string
-	APIKeyForReadOnly      []string
-	APIKeyForRW            []string
-	AssetsDir              string
-	InstanceIDs            []string
-	MapDataStoringDuration int
-	LogLevel               logger.LogLevel
-	ContentDBConfig        types.DBConfig
-	DebugMode              bool
+	Port                 string
+	AllowOrigins         []string
+	APIKeyForReadOnly    []string
+	APIKeyForRW          []string
+	AssetsDir            string
+	InstanceIDs          []string
+	MapDataCacheLifetime int
+	LogLevel             logger.LogLevel
+	ContentDBConfig      types.DBConfig
+	DebugMode            bool
 }
 
 func InitConfig() Config {
@@ -58,9 +58,9 @@ func InitConfig() Config {
 	helpers.CheckEmptyInstanceIDs(conf.InstanceIDs)
 
 	var err error
-	conf.MapDataStoringDuration, err = strconv.Atoi(os.Getenv(ENV_MAP_DATA_STORING_DURATION_IN_SECONDS))
+	conf.MapDataCacheLifetime, err = strconv.Atoi(os.Getenv(ENV_MAP_DATA_CACHE_LIFETIME_IN_SECONDS))
 	if err != nil {
-		logger.Error.Fatal("MAP_DATA_STORING_DURATION: " + err.Error())
+		logger.Error.Fatal("MapDataCacheLifetime: " + err.Error())
 	}
 
 	conf.LogLevel = getLogLevel()
