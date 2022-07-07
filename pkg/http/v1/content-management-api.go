@@ -57,17 +57,20 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
 	var req studyengine.ExternalEventPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error.Printf("error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	InstanceID := req.InstanceID
 	err := helpers.CheckInstanceID(h.instanceIDs, InstanceID)
 	if err != nil {
+		logger.Error.Printf("error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	TBmapData, err := helpers.StudyEventToTBMapData(req)
 	if err != nil {
+		logger.Error.Printf("error while processing study event to TBMapData: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -75,14 +78,14 @@ func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
 	// save TBmapdata into DB
 	_, err = h.contentDB.AddTickBiteMapData(InstanceID, TBmapData)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to add data to data base"})
+		logger.Error.Printf("unexpected error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to add data to data base"})
 		return
 	}
 
 	// prepare response
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Map Data successfully added to data base"})
-
 }
 
 func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
@@ -90,13 +93,15 @@ func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
 
 	var TBMapData []types.TickBiteMapData
 	if err := c.ShouldBindJSON(&TBMapData); err != nil {
+		logger.Error.Printf("error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	for i, d := range TBMapData {
 		if _, err := h.contentDB.AddTickBiteMapData(instanceID, d); err != nil {
-			logger.Error.Printf("Unable to add data to db: [%d]: %v", i, d)
+			logger.Error.Printf("Unable to add data to db: [%d]: %v, %v", i, d, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to add data to data base"})
 		}
 	}
 
@@ -106,6 +111,7 @@ func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
 func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
+		logger.Debug.Printf("error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "No file is received",
 		})
@@ -119,6 +125,7 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	buffer := make([]byte, 512)
 	_, err = fileContent.Read(buffer)
 	if err != nil {
+		logger.Error.Printf("unexpected error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "error reading file",
 		})
@@ -126,7 +133,8 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	}
 	kind, _ := filetype.Match(buffer)
 	if kind == filetype.Unknown {
-		c.JSON(http.StatusBadRequest, gin.H{
+		logger.Error.Printf("unexpected error: file type is unknown")
+		c.JSON(http.StatusUnsupportedMediaType, gin.H{
 			"message": "Unknown file type",
 		})
 		return
@@ -147,18 +155,25 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 		Size:       int32(file.Size),
 	})
 	if err != nil {
-		logger.Error.Printf("Error UploadFile: %v", err.Error())
+		logger.Error.Printf("error saving file in db: %v", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"Unable to save file in db": err.Error()})
 		return
 	}
 
 	err = os.MkdirAll(h.assetsDir, os.ModePerm)
 	if err != nil {
-		logger.Info.Printf("Error uploading file: err at target path mkdir %v", err.Error())
+		logger.Error.Printf("error uploading file: err at target path mkdir %v", err.Error())
+
 		//if error delete db object
 		_, err = h.contentDB.DeleteFileInfo(instanceID, fi.ID.String())
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"unexpected error": err.Error()})
+			logger.Error.Printf("unexpected error: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"unexpected error": err.Error()})
+			return
 		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Unable to upload file",
+		})
 		return
 	}
 
@@ -168,7 +183,8 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 		//if error delete db object
 		_, err = h.contentDB.DeleteFileInfo(instanceID, fi.ID.String())
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"unexpected error": err.Error()})
+			logger.Error.Printf("unexpected error: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"unexpected error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
