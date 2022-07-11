@@ -40,6 +40,7 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 	n, err := strconv.Atoi(nParam)
 	if err != nil {
 		logger.Error.Println("Could not read weeks parameter")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Could not read weeks parameter"})
 	}
 
 	t := time.Now().AddDate(0, 0, -(n * 7)).Unix()
@@ -59,6 +60,7 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 	//fetch data from DB
 	points, err := h.contentDB.FindTickBiteMapDataNewerThan(instanceID, t)
 	if err != nil {
+		logger.Error.Printf("unexpected error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch data from db"})
 		return
 	}
@@ -99,7 +101,8 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 		tDays := time.Unix(point.Time, 0).Sub(t.AddDate(0, 0, end_date_days)).Hours() / 24
 		index := int64(tDays / 7)
 		if index >= int64(n) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "could not allocate map data to time interval"})
+			logger.Error.Printf("error while allocating map data to time intervals, check time of map data: %v", point.Time)
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "could not allocate map data to time interval"})
 			return
 		}
 

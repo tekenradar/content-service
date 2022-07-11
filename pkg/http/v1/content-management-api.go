@@ -201,6 +201,7 @@ func (h *HttpEndpoints) deleteFileHandl(c *gin.Context) {
 	instanceID := c.Param("instanceID")
 	fileID := c.DefaultQuery("fileID", "")
 	if fileID == "" {
+		logger.Error.Printf("error: fileID is empty")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "fileID is empty"})
 		return
 	}
@@ -210,21 +211,24 @@ func (h *HttpEndpoints) deleteFileHandl(c *gin.Context) {
 	for _, id := range fileIDs {
 		fileInfo, err := h.contentDB.FindFileInfo(instanceID, id)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"unexpected error": "file info not found"})
+			logger.Error.Printf("unexpected error: %v, %v", err, id)
+			c.JSON(http.StatusInternalServerError, gin.H{"unexpected error": "file info not found"})
 			return
 		}
 
 		// delete file
 		err = os.Remove(fileInfo.Path)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"unexpected error": err.Error()})
+			logger.Error.Printf("unexpected error: %v, %v", err, id)
+			c.JSON(http.StatusInternalServerError, gin.H{"unexpected error": err.Error()})
 			continue
 		}
 
 		// remove file info
 		count, err := h.contentDB.DeleteFileInfo(instanceID, id)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"unexpected error": err.Error()})
+			logger.Error.Printf("unexpected error: %v, %v", err, id)
+			c.JSON(http.StatusInternalServerError, gin.H{"unexpected error": err.Error()})
 			continue
 		}
 		logger.Debug.Printf("%d file info removed", count)
@@ -238,6 +242,7 @@ func (h *HttpEndpoints) getFileInfosHandl(c *gin.Context) {
 	//fetch data from DB
 	fileInfoList, err := h.contentDB.GetFileInfoList(instanceID)
 	if err != nil {
+		logger.Error.Printf("unexpected error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch data from db"})
 		return
 	}
@@ -250,6 +255,7 @@ func (h *HttpEndpoints) getNewsItemsHandl(c *gin.Context) {
 	//fetch data from DB
 	newsItemList, err := h.contentDB.GetNewsItemsList(instanceID)
 	if err != nil {
+		logger.Error.Printf("unexpected error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch data from db"})
 		return
 	}
@@ -260,6 +266,7 @@ func (h *HttpEndpoints) getNewsItemsHandl(c *gin.Context) {
 func (h *HttpEndpoints) addNewsItemHandl(c *gin.Context) {
 	var req types.NewsItem
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error.Printf("unexpected error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -268,7 +275,8 @@ func (h *HttpEndpoints) addNewsItemHandl(c *gin.Context) {
 	// save TBmapdata into DB
 	_, err := h.contentDB.AddNewsItem(instanceID, req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to add news item to data base"})
+		logger.Error.Printf("unexpected error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to add news item to data base"})
 		return
 	}
 
