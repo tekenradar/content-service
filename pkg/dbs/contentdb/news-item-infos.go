@@ -1,6 +1,8 @@
 package contentdb
 
 import (
+	"errors"
+
 	"github.com/tekenradar/content-service/pkg/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -66,4 +68,18 @@ func (dbService *ContentDBService) GetNewsItemsList(instanceID string) (newsItem
 	}
 
 	return newsItemList, nil
+}
+
+func (dbService *ContentDBService) DeleteNewsItem(instanceID string, newsItemID string) (count int64, err error) {
+	ctx, cancel := dbService.getContext()
+	defer cancel()
+
+	if newsItemID == "" {
+		return 0, errors.New("news item id must be defined")
+	}
+	_id, _ := primitive.ObjectIDFromHex(newsItemID)
+	filter := bson.M{"_id": _id}
+
+	res, err := dbService.collectionRefNewsItems(instanceID).DeleteOne(ctx, filter)
+	return res.DeletedCount, err
 }
