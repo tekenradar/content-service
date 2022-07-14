@@ -51,6 +51,7 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 			newsitems.GET("", h.getNewsItemsHandl)
 			newsitems.POST("", h.addNewsItemHandl)
 			newsitems.DELETE("", h.deleteNewsItemHandl)
+			newsitems.PUT("", h.updateNewsItemHandl)
 		}
 	}
 }
@@ -273,7 +274,6 @@ func (h *HttpEndpoints) addNewsItemHandl(c *gin.Context) {
 	}
 	instanceID := c.Param("instanceID")
 
-	// save TBmapdata into DB
 	_, err := h.contentDB.AddNewsItem(instanceID, req)
 	if err != nil {
 		logger.Error.Printf("unexpected error: %v", err)
@@ -281,10 +281,8 @@ func (h *HttpEndpoints) addNewsItemHandl(c *gin.Context) {
 		return
 	}
 
-	// prepare response
 	c.JSON(http.StatusOK, gin.H{
 		"message": "News Item successfully added to data base"})
-
 }
 
 func (h *HttpEndpoints) deleteNewsItemHandl(c *gin.Context) {
@@ -309,4 +307,26 @@ func (h *HttpEndpoints) deleteNewsItemHandl(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "News Item has been successfully removed."})
+}
+
+func (h *HttpEndpoints) updateNewsItemHandl(c *gin.Context) {
+	var req types.NewsItem
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error.Printf("unexpected error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	instanceID := c.Param("instanceID")
+
+	count, err := h.contentDB.UpdateNewsItem(instanceID, req)
+	if err != nil {
+		logger.Error.Printf("unexpected error: %v %d %v", err, count, req.ID.Hex())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Can not find news item in data base"})
+		return
+	}
+	logger.Debug.Printf("%d news item updated", count)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "News Item successfully updated"})
+
 }

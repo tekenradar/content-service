@@ -83,3 +83,20 @@ func (dbService *ContentDBService) DeleteNewsItem(instanceID string, newsItemID 
 	res, err := dbService.collectionRefNewsItems(instanceID).DeleteOne(ctx, filter)
 	return res.DeletedCount, err
 }
+
+func (dbService *ContentDBService) UpdateNewsItem(instanceID string, newsItem types.NewsItem) (int64, error) {
+	ctx, cancel := dbService.getContext()
+	defer cancel()
+
+	_id, err := primitive.ObjectIDFromHex(newsItem.ID.Hex())
+	if err != nil {
+		return 0, err
+	}
+	filter := bson.M{"_id": _id}
+
+	res, err := dbService.collectionRefNewsItems(instanceID).ReplaceOne(ctx, filter, newsItem)
+	if err != nil {
+		return 0, err
+	}
+	return res.ModifiedCount, err
+}
