@@ -148,13 +148,23 @@ func (h *HttpEndpoints) uploadFileHandl(c *gin.Context) {
 	newFileName := db_ID.Hex() + extension
 	dst := path.Join(h.assetsDir, newFileName)
 
+	//optional label and description for file entry
+	req := new(types.FileInfo)
+	if err := c.Bind(&req); err != nil {
+		logger.Error.Printf("error while binding file information: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error while binding file information": err.Error()})
+		return
+	}
+
 	fi, err := h.contentDB.SaveFileInfo(instanceID, types.FileInfo{
-		ID:         db_ID,
-		Path:       dst,
-		UploadedAt: time.Now().Unix(),
-		FileType:   kind.MIME.Value,
-		Name:       newFileName,
-		Size:       int32(file.Size),
+		ID:          db_ID,
+		Path:        dst,
+		UploadedAt:  time.Now().Unix(),
+		FileType:    kind.MIME.Value,
+		Name:        newFileName,
+		Size:        int32(file.Size),
+		Label:       req.Label,
+		Description: req.Description,
 	})
 	if err != nil {
 		logger.Error.Printf("error saving file in db: %v", err.Error())
@@ -320,7 +330,7 @@ func (h *HttpEndpoints) updateNewsItemHandl(c *gin.Context) {
 
 	count, err := h.contentDB.UpdateNewsItem(instanceID, req)
 	if err != nil {
-		logger.Error.Printf("unexpected error: %v %d %v", err, count, req.ID.Hex())
+		logger.Error.Printf("unexpected error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Can not find news item in data base"})
 		return
 	}
