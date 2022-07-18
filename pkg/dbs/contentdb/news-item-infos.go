@@ -100,3 +100,15 @@ func (dbService *ContentDBService) UpdateNewsItem(instanceID string, newsItem ty
 	}
 	return res.ModifiedCount, err
 }
+
+func (dbService *ContentDBService) FindNewsItem(instanceID string, newsItemID string) (types.NewsItem, error) {
+	ctx, cancel := dbService.getContext()
+	defer cancel()
+
+	_id, _ := primitive.ObjectIDFromHex(newsItemID)
+	filter := bson.M{"_id": _id}
+
+	elem := types.NewsItem{}
+	err := dbService.collectionRefNewsItems(instanceID).FindOne(ctx, filter).Decode(&elem)
+	return elem, err
+}

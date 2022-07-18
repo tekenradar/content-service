@@ -30,6 +30,8 @@ func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
 		{
 			data.GET("/tb-report", h.getTBReportMapDataHandl)
 		}
+		newsitems := instanceGroup.Group("/news-items")
+		newsitems.GET("", h.getNewsItemHandl)
 	}
 	files := rg.Group("/files")
 	files.Static("/assets", h.assetsDir)
@@ -116,4 +118,26 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, rmd)
+}
+
+func (h *HttpEndpoints) getNewsItemHandl(c *gin.Context) {
+	instanceID := c.Param("instanceID")
+	newsItemID := c.DefaultQuery("news-item-ID", "")
+	if newsItemID == "" {
+		logger.Error.Printf("error: ID of news item is empty")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID of news item is empty"})
+		return
+	}
+	newsItem, err := h.contentDB.FindNewsItem(instanceID, newsItemID)
+	if err != nil {
+		logger.Error.Printf("unexpected error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "news item not found"})
+		return
+	}
+	if newsItem.Status != "published" {
+		logger.Error.Printf("error: news item is not published")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "news item not found"})
+		return
+	}
+	c.JSON(http.StatusOK, newsItem)
 }
