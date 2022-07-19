@@ -31,7 +31,10 @@ func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
 			data.GET("/tb-report", h.getTBReportMapDataHandl)
 		}
 		newsitems := instanceGroup.Group("/news-items")
-		newsitems.GET("", h.getNewsItemHandl)
+		newsitems.GET("", h.getPublishedNewsItemsHandl)
+		newsitem := instanceGroup.Group("/news-item")
+		newsitem.GET("", h.getNewsItemHandl)
+
 	}
 	files := rg.Group("/files")
 	files.Static("/assets", h.assetsDir)
@@ -140,4 +143,46 @@ func (h *HttpEndpoints) getNewsItemHandl(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, newsItem)
+}
+
+func (h *HttpEndpoints) getPublishedNewsItemsHandl(c *gin.Context) {
+	instanceID := c.Param("instanceID")
+	fromString := c.DefaultQuery("from", "0")
+	from, err := strconv.ParseInt(fromString, 10, 64)
+	if err != nil {
+		logger.Error.Println("Could not read start date parameter")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Could not read start date parameter"})
+	}
+	untilString := c.DefaultQuery("until", "0")
+	until, _ := strconv.ParseInt(untilString, 10, 64)
+	if err != nil {
+		logger.Error.Println("Could not read end date parameter")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Could not read end date parameter"})
+	}
+	if until == 0 {
+		until = time.Now().Unix()
+	}
+	nString := c.DefaultQuery("n", "-1")
+	n, err := strconv.Atoi(nString)
+	if err != nil {
+		logger.Error.Println("Could not read number of news items parameter")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Could not read number of news items parameter"})
+	}
+
+	if from > until {
+		logger.Error.Println("error: end date of news items interval is older than start date")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "End date of news items interval is older than start date"})
+	}
+
+	newsItemList, err := h.contentDB.FindNewsItemsInTimeInterval(instanceID, from, until, true)
+	if err != nil {
+		logger.Error.Printf("unexpected error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch data from db"})
+		return
+	}
+	if n >= 0 && n < len(newsItemList) {
+		newsItemList = newsItemList[:n]
+	}
+
+	c.JSON(http.StatusOK, newsItemList)
 }

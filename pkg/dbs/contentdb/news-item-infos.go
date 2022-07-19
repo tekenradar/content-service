@@ -112,3 +112,46 @@ func (dbService *ContentDBService) FindNewsItem(instanceID string, newsItemID st
 	err := dbService.collectionRefNewsItems(instanceID).FindOne(ctx, filter).Decode(&elem)
 	return elem, err
 }
+
+func (dbService *ContentDBService) FindNewsItemsInTimeInterval(instanceID string, from int64, until int64, published bool) (newsItems []types.NewsItem, err error) {
+	ctx, cancel := dbService.getContext()
+	defer cancel()
+
+	filter := bson.M{}
+	if published {
+		filter["status"] = "published"
+	}
+	if 0 <= from && from <= until {
+		filter["time"] = bson.M{"$gte": from, "$lte": until}
+	} else {
+		return newsItems, errors.New("invalid news item interval parameter")
+	}
+
+	batchSize := int32(32)
+	opts := options.FindOptions{
+		BatchSize: &batchSize,
+	}
+	cur, err := dbService.collectionRefNewsItems(instanceID).Find(ctx, filter, &opts)
+
+	if err != nil {
+		return newsItems, err
+	}
+	defer cur.Close(ctx)
+
+	newsItems = []types.NewsItem{}
+	for cur.Next(ctx) {
+		var result types.NewsItem
+		err := cur.Decode(&result)
+
+		if err != nil {
+			return newsItems, err
+		}
+
+		newsItems = append(newsItems, result)
+	}
+	if err := cur.Err(); err != nil {
+		return newsItems, err
+	}
+
+	return newsItems, nil
+}
