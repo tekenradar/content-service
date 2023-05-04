@@ -35,21 +35,26 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 			data.POST("/tb-map-data", mw.RequirePayload(), h.loadTBMapDataHandl)
 		}
 
-		files := instanceGroup.Group("/files")
-		files.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
+		filesW := instanceGroup.Group("/files")
+		filesW.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
 		{
-			files.POST("", mw.RequirePayload(), h.uploadFileHandl)
-			files.DELETE("", h.deleteFileHandl)
+			filesW.POST("", mw.RequirePayload(), h.uploadFileHandl)
+			filesW.DELETE("", h.deleteFileHandl)
 		}
-		files.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
+		filesR := instanceGroup.Group("/files")
+		filesR.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
 		{
-			files.GET("", h.getFileInfosHandl)
+			filesR.GET("", h.getFileInfosHandl)
 		}
-		newsitems := instanceGroup.Group("/news-items")
-		newsitems.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
+		newsitemsR := instanceGroup.Group("/news-items")
+		newsitemsR.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
 		{
-			newsitems.GET("", h.getNewsItemsHandl)
-			newsitems.POST("", h.addNewsItemHandl)
+			newsitemsR.GET("", h.getNewsItemsHandl)
+		}
+		newsitemsW := instanceGroup.Group("/news-items")
+		newsitemsW.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
+		{
+			newsitemsW.POST("", h.addNewsItemHandl)
 		}
 	}
 }
