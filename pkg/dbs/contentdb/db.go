@@ -51,16 +51,21 @@ func NewContentDBService(configs types.DBConfig, InstanceIDs []string) *ContentD
 		if err := ContentDBService.CreateIndexTickBiteMapInfos(d); err != nil {
 			logger.Error.Printf("Unable to create index model for TickBiteMapInfo: [%d]: %v", i, d)
 		}
+
+		if err := ContentDBService.CreateIndexLPPInfos(d); err != nil {
+			logger.Error.Printf("Unable to create index model for LPPInfos: [%d]: %v", i, d)
+		}
 	}
 	for i, d := range InstanceIDs {
 		if err := ContentDBService.CreateIndexNewsItemInfos(d); err != nil {
 			logger.Error.Printf("Unable to create index model for NewsItems: [%d]: %v", i, d)
 		}
 	}
+
 	return ContentDBService
 }
 
-//new Collection
+// new Collection
 func (dbService *ContentDBService) collectionRefTickBiteMapInfos(instanceID string) *mongo.Collection {
 	return dbService.DBClient.Database(dbService.DBNamePrefix + instanceID + "_contentDB").Collection("tick-bite-map-infos")
 }
@@ -71,6 +76,10 @@ func (dbService *ContentDBService) collectionRefUploadedFiles(instanceID string)
 
 func (dbService *ContentDBService) collectionRefNewsItems(instanceID string) *mongo.Collection {
 	return dbService.DBClient.Database(dbService.DBNamePrefix + instanceID + "_contentDB").Collection("news-items")
+}
+
+func (dbService *ContentDBService) collectionLPP(instanceID string) *mongo.Collection {
+	return dbService.DBClient.Database(dbService.DBNamePrefix + instanceID + "_contentDB").Collection("lpp")
 }
 
 // DB utils
