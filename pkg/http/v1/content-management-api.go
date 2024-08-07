@@ -24,6 +24,7 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 	studyevents.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
 	{
 		studyevents.POST("/tb-map-point-aggregator", mw.RequirePayload(), h.addTBReportHandl)
+		studyevents.POST("/lpp-submission", mw.RequirePayload(), h.LPPSubmissionHandl)
 	}
 
 	instanceGroup := rg.Group("/:instanceID")
@@ -91,6 +92,43 @@ func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
 	// prepare response
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Map Data successfully added to data base"})
+}
+
+func (h *HttpEndpoints) LPPSubmissionHandl(c *gin.Context) {
+	var req studyengine.ExternalEventPayload
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error.Printf("error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	InstanceID := req.InstanceID
+	err := helpers.CheckInstanceID(h.instanceIDs, InstanceID)
+	if err != nil {
+		logger.Error.Printf("error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	p, err := h.contentDB.GetLPPParticipant(InstanceID, "todo")
+	if err != nil {
+		logger.Error.Printf("error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	newSubmissions := p.Submissions
+	newSubmissions[req.Response.Key] = time.Now()
+
+	err = h.contentDB.UpdateLPPParticipantSubmissions(InstanceID, p.PID, newSubmissions)
+	if err != nil {
+		logger.Error.Printf("error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	logger.Info.Printf("LPP submission received for instance %s", InstanceID)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "LPP submission registered successfully"})
 }
 
 func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {

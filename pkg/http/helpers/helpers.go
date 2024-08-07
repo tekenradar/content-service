@@ -59,7 +59,7 @@ func getReportType(key string) (Rtype string, err error) {
 	}
 }
 
-func parseResponseValueAsFloat(mapItem []types.ResponseItem, name string) (value float64, err error) {
+func parseResponseValueAsFloat(mapItem []*types.ResponseItem, name string) (value float64, err error) {
 	for _, mapItem := range mapItem {
 		if mapItem.Key == name {
 			val, err := strconv.ParseFloat(mapItem.Value, 64)
@@ -72,7 +72,7 @@ func parseResponseValueAsFloat(mapItem []types.ResponseItem, name string) (value
 	return 0, errors.New("Could not find response value")
 }
 
-func findResponseItem(response []types.SurveyItemResponse, itemKey string) (item []types.ResponseItem, err error) {
+func findResponseItem(response []types.SurveyItemResponse, itemKey string) (item []*types.ResponseItem, err error) {
 	for _, resp := range response {
 		if strings.Contains(resp.Key, itemKey) {
 			for _, item := range resp.Response.Items {
@@ -82,7 +82,7 @@ func findResponseItem(response []types.SurveyItemResponse, itemKey string) (item
 			}
 		}
 	}
-	return []types.ResponseItem{}, errors.New("Could not find response item")
+	return []*types.ResponseItem{}, errors.New("Could not find response item")
 }
 
 func CheckInstanceID(validIDs []string, instanceID string) (err error) {
