@@ -30,6 +30,12 @@ func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
 		{
 			data.GET("/tb-report", h.getTBReportMapDataHandl)
 		}
+
+		lpp := instanceGroup.Group("/lpp")
+		lpp.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
+		{
+			lpp.GET("/:pid", h.getLPPParticipantsHandl)
+		}
 	}
 	files := rg.Group("/files")
 	files.Static("/assets", h.assetsDir)
@@ -113,4 +119,20 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, rmd)
+}
+
+func (h *HttpEndpoints) getLPPParticipantsHandl(c *gin.Context) {
+	instanceID := c.Param("instanceID")
+	pid := c.Param("pid")
+
+	//fetch data from DB
+	lppParticipant, err := h.contentDB.GetLPPParticipant(instanceID, pid)
+	if err != nil {
+		logger.Error.Printf("error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while fetching participant"})
+		return
+	}
+
+	lppParticipant.ContactInfos = nil
+	c.JSON(http.StatusOK, lppParticipant)
 }
