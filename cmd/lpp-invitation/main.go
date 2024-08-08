@@ -28,91 +28,189 @@ const (
 
 var (
 	dbService *contentdb.ContentDBService
+	conf      Config
 )
 
 func main() {
-	conf := readConfig()
 
-	dbService = contentdb.NewContentDBService(conf.ContentDBConfig, conf.InstanceIDs)
+	dbService = contentdb.NewContentDBService(getContentDBConfig(), conf.InstanceIDs)
 
-	if conf.RunParticipantCreation {
-		slog.Info("Start LPplus participant creation process", "force", conf.ForceReplace, "csv", conf.CSVPath)
-		participants := readCSVFile(conf.CSVPath, []rune(conf.Separator)[0])
-		createParticipants(participants, conf.ForceReplace)
+	if conf.RunTasks.ParticipantCreation {
+		slog.Debug("Start LPplus participant creation process", "force", conf.ParticipantCreation.ForceReplace, "csv", conf.ParticipantCreation.CSVPath)
+		participants := readCSVFile(conf.ParticipantCreation.CSVPath, []rune(conf.ParticipantCreation.Separator)[0])
+		createParticipants(participants, conf.ParticipantCreation.ForceReplace)
 	}
 
+	if conf.RunTasks.InvitationSending {
+		sendInvitations()
+	}
+
+	if conf.RunTasks.ReminderSending {
+		sendReminders()
+	}
+}
+
+func sendInvitations() {
 	// send invitation email to participants who did not receive an invitation yet
-	if conf.RunInvitationSending {
-		emailClient, emailServiceClose := connectToEmailService(conf.EmailClientURL, DefaultGRPCMaxMsgSize)
-		defer emailServiceClose()
 
-		// Load invitation template
-		emailTemplate, err := os.ReadFile(conf.InvitationEmailTemplatePath)
-		if err != nil {
-			slog.Error("Unable to read invitation email template", "error", err, slog.String("path", conf.InvitationEmailTemplatePath))
-			return
+	emailClient, emailServiceClose := connectToEmailService(conf.EmailClientURL, DefaultGRPCMaxMsgSize)
+	defer emailServiceClose()
 
-		}
+	uninvitedParticipnts, err := dbService.FindUninvitedLPPParticipants(instanceID)
+	if err != nil {
+		slog.Error("Unable to find uninvited participants", "error", err)
+		return
+	}
 
-		uninvitedParticipnts, err := dbService.FindUninvitedLPPParticipants(instanceID)
-		if err != nil {
-			slog.Error("Unable to find uninvited participants", "error", err)
-			return
-		}
-
-		if len(uninvitedParticipnts) == 0 {
-
-			fmt.Println("\n=====================================================================")
-			slog.Info("No uninvited participants found")
-			fmt.Println("=====================================================================")
-			fmt.Println()
-			fmt.Println()
-			return
-		}
-
-		target := len(uninvitedParticipnts)
-		sent := 0
-
-		for _, p := range uninvitedParticipnts {
-			slog.Debug("Send invitation email", "pid", p.PID)
-
-			content, err := ResolveTemplate(
-				"lpp-invitation",
-				string(emailTemplate),
-				map[string]string{
-					"pid":  p.PID,
-					"name": p.ContactInfos.Name,
-				},
-			)
-			if err != nil {
-				logger.Error.Printf("invitation email could not be generated: %v", err)
-				continue
-			}
-
-			_, err = emailClient.SendEmail(context.Background(), &email_client_service.SendEmailReq{
-				To:      []string{p.ContactInfos.Email},
-				Subject: conf.InvitationEmailSubject,
-				Content: content,
-			})
-			if err != nil {
-				slog.Error("Unable to send invitation email", "error", err, "pid", p.PID)
-				continue
-			}
-
-			err = dbService.UpdateLPPParticipantInvitationSentAt(instanceID, p.PID, time.Now())
-			if err != nil {
-				slog.Error("Unable to update invitation sent at", "error", err, "pid", p.PID)
-				continue
-			}
-			sent++
-		}
-
+	if len(uninvitedParticipnts) == 0 {
 		fmt.Println("\n=====================================================================")
-		slog.Info("Sent invitation emails", "sent", sent, "target", target)
+		slog.Info("No uninvited participants found")
 		fmt.Println("=====================================================================")
 		fmt.Println()
 		fmt.Println()
+		return
 	}
+
+	target := len(uninvitedParticipnts)
+	sent := 0
+
+	for _, p := range uninvitedParticipnts {
+		slog.Debug("Send invitation email", "pid", p.PID)
+
+		messageConfigForCohort, ok := conf.MessageConfigs[p.Cohort]
+		if !ok {
+			slog.Error("Unable to find message config for cohort", "cohort", p.Cohort)
+			continue
+		}
+
+		// Load invitation template
+		emailTemplate, err := os.ReadFile(messageConfigForCohort.InvitationTemplatePath)
+		if err != nil {
+			slog.Error("Unable to read invitation email template", "error", err, slog.String("path", messageConfigForCohort.InvitationTemplatePath))
+			return
+
+		}
+
+		content, err := ResolveTemplate(
+			"lpp-invitation",
+			string(emailTemplate),
+			map[string]string{
+				"pid":        p.PID,
+				"name":       p.ContactInfos.Name,
+				"websiteURL": conf.WebsiteURL,
+			},
+		)
+		if err != nil {
+			logger.Error.Printf("invitation email could not be generated: %v", err)
+			continue
+		}
+
+		_, err = emailClient.SendEmail(context.Background(), &email_client_service.SendEmailReq{
+			To:      []string{p.ContactInfos.Email},
+			Subject: messageConfigForCohort.InvitationSubject,
+			Content: content,
+		})
+		if err != nil {
+			slog.Error("Unable to send invitation email", "error", err, "pid", p.PID)
+			continue
+		}
+
+		err = dbService.UpdateLPPParticipantInvitationSentAt(instanceID, p.PID, time.Now())
+		if err != nil {
+			slog.Error("Unable to update invitation sent at", "error", err, "pid", p.PID)
+			continue
+		}
+		sent++
+	}
+
+	fmt.Println("\n=====================================================================")
+	slog.Info("Sent invitation emails", "sent", sent, "target", target)
+	fmt.Println("=====================================================================")
+	fmt.Println()
+	fmt.Println()
+}
+
+func sendReminders() {
+	emailClient, emailServiceClose := connectToEmailService(conf.EmailClientURL, DefaultGRPCMaxMsgSize)
+	defer emailServiceClose()
+
+	participantsToRemind, err := dbService.GetParticpantsToRemind(instanceID)
+	if err != nil {
+		slog.Error("Unable to find participants to remind", "error", err)
+		return
+	}
+
+	if len(participantsToRemind) == 0 {
+		fmt.Println("\n=====================================================================")
+		slog.Info("No participants to remind")
+		fmt.Println("=====================================================================")
+		fmt.Println()
+		fmt.Println()
+		return
+	}
+
+	target := len(participantsToRemind)
+	sent := 0
+
+	for _, p := range participantsToRemind {
+		if p.Submissions != nil {
+			slog.Debug("Participant already submitted", "pid", p.PID)
+			continue
+		}
+		slog.Debug("Send reminder email", "pid", p.PID)
+
+		messageConfigForCohort, ok := conf.MessageConfigs[p.Cohort]
+		if !ok {
+			slog.Error("Unable to find message config for cohort", "cohort", p.Cohort)
+			continue
+		}
+
+		// Load invitation template
+		emailTemplate, err := os.ReadFile(messageConfigForCohort.ReminderTemplatePath)
+		if err != nil {
+			slog.Error("Unable to read reminder email template", "error", err, slog.String("path", messageConfigForCohort.ReminderTemplatePath))
+			return
+
+		}
+
+		content, err := ResolveTemplate(
+			"lpp-reminder",
+			string(emailTemplate),
+			map[string]string{
+				"pid":        p.PID,
+				"name":       p.ContactInfos.Name,
+				"websiteURL": conf.WebsiteURL,
+			},
+		)
+		if err != nil {
+			logger.Error.Printf("reminder email could not be generated: %v", err)
+			continue
+		}
+
+		_, err = emailClient.SendEmail(context.Background(), &email_client_service.SendEmailReq{
+			To:      []string{p.ContactInfos.Email},
+			Subject: messageConfigForCohort.ReminderSubject,
+			Content: content,
+		})
+		if err != nil {
+			slog.Error("Unable to send reminder email", "error", err, "pid", p.PID)
+			continue
+		}
+
+		err = dbService.UpdateLPPParticipantReminderSentAt(instanceID, p.PID, time.Now())
+		if err != nil {
+			slog.Error("Unable to update reminder sent at", "error", err, "pid", p.PID)
+			continue
+		}
+		sent++
+	}
+
+	fmt.Println("\n=====================================================================")
+	slog.Info("Sent reminder emails", "sent", sent, "target", target)
+	fmt.Println("=====================================================================")
+	fmt.Println()
+	fmt.Println()
+
 }
 
 func readCSVFile(filePath string, separator rune) []types.LPPParticipant {
@@ -153,8 +251,9 @@ func readCSVFile(filePath string, separator rune) []types.LPPParticipant {
 				Email: record[2],
 				Name:  record[3],
 			},
-			Cohort:    record[4],
-			StudyData: make(map[string]string),
+			Cohort:      record[4],
+			RemindAfter: time.Now().AddDate(0, 0, 21),
+			StudyData:   make(map[string]string),
 		}
 		for i := 5; i < len(record); i++ {
 			p.StudyData[colNames[i]] = record[i]

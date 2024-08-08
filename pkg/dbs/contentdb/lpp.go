@@ -94,12 +94,65 @@ func (dbService *ContentDBService) FindUninvitedLPPParticipants(instanceID strin
 	return participants, nil
 }
 
+func (dbService *ContentDBService) GetParticpantsToRemind(instanceID string) ([]types.LPPParticipant, error) {
+	ctx, cancel := dbService.getContext()
+	defer cancel()
+
+	// invitation older than 3 weeks but is set to reminder
+	// submissions is null
+	// no reminder sent
+
+	filter := bson.M{
+		"remindAfter": bson.M{
+			"$lte": time.Now(),
+		},
+		"reminderSentAt": bson.M{"$lte": time.Date(2024, 8, 1, 0, 0, 0, 0, time.UTC)},
+	}
+	batchSize := int32(32)
+	opts := options.FindOptions{
+		BatchSize: &batchSize,
+	}
+	cur, err := dbService.collectionLPP(instanceID).Find(ctx, filter, &opts)
+
+	if err != nil {
+		return []types.LPPParticipant{}, err
+	}
+	defer cur.Close(ctx)
+
+	participants := []types.LPPParticipant{}
+	for cur.Next(ctx) {
+		var result types.LPPParticipant
+		err := cur.Decode(&result)
+
+		if err != nil {
+			return []types.LPPParticipant{}, err
+		}
+
+		participants = append(participants, result)
+	}
+	if err := cur.Err(); err != nil {
+		return []types.LPPParticipant{}, err
+	}
+
+	return participants, nil
+}
+
 func (dbService *ContentDBService) UpdateLPPParticipantInvitationSentAt(instanceID string, pid string, invitationSentAt time.Time) error {
 	ctx, cancel := dbService.getContext()
 	defer cancel()
 
 	filter := bson.M{"pid": pid}
 	update := bson.M{"$set": bson.M{"invitationSentAt": invitationSentAt}}
+	_, err := dbService.collectionLPP(instanceID).UpdateOne(ctx, filter, update)
+	return err
+}
+
+func (dbService *ContentDBService) UpdateLPPParticipantReminderSentAt(instanceID string, pid string, reminderSentAt time.Time) error {
+	ctx, cancel := dbService.getContext()
+	defer cancel()
+
+	filter := bson.M{"pid": pid}
+	update := bson.M{"$set": bson.M{"reminderSentAt": reminderSentAt}}
 	_, err := dbService.collectionLPP(instanceID).UpdateOne(ctx, filter, update)
 	return err
 }

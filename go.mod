@@ -11,4 +11,5 @@ require (
 	github.com/influenzanet/study-service v1.6.0
 	go.mongodb.org/mongo-driver v1.11.7
 	google.golang.org/grpc v1.55.0
+	gopkg.in/yaml.v2 v2.4.0
 )
