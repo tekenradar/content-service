@@ -1,0 +1,36 @@
+instanceIDs:
+  - tekenradar
+contentDBConfig:
+  connection_str: <connection-string>
+  connection_prefix: ""
+  timeout: 30
+  idle_conn_timeout: 45
+  max_pool_size: 8
+  db_name_prefix: ""
+emailClientURL: localhost:5005
+runTasks:
+  participantCreation: false
+  invitationSending: false
+  reminderSending: true
+participantCreation:
+  csvPath: participants.csv
+  separator: ";"
+  forceReplace: false
+websiteURL: http://localhost:3000
+messageConfigs:
+  LPconf:
+    invitationTemplatePath: LPPlus-templates/LPplus_invite_LPparticipants/nl.html
+    invitationSubject: Uitnodiging nieuwe vragenlijst na onderzoek via Tekenradar
+    reminderTemplatePath: LPPlus-templates/LPplus_reminder_LPparticipants/nl.html
+    reminderSubject: Herinnering uitnodiging nieuwe vragenlijst na onderzoek via Tekenradar
+  TB:
+    invitationTemplatePath: LPPlus-templates/LPplus_invite_tbcontrols/nl.html
+    invitationSubject: Uitnodiging nieuwe vragenlijst na onderzoek via Tekenradar
+    reminderTemplatePath: LPPlus-templates/LPplus_reminder_tbcontrols/nl.html
+    reminderSubject: Herinnering uitnodiging nieuwe vragenlijst na onderzoek via Tekenradar
+  POP:
+    invitationTemplatePath: LPPlus-templates/LPplus_invite_popcontrols/nl.html
+    invitationSubject: Uitnodiging nieuwe vragenlijst na onderzoek via Tekenradar
+    reminderTemplatePath: LPPlus-templates/LPplus_reminder_popcontrols/nl.html
+    reminderSubject: Herinnering uitnodiging nieuwe vragenlijst na onderzoek via Tekenradar
+

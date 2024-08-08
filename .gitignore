@@ -4,3 +4,4 @@ test/test.sh
 .vscode/settings.json
 .vscode/launch.json
 cmd/content-management-service/assets
+cmd/lpp-invitation/test
