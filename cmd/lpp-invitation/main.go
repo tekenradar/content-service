@@ -142,7 +142,7 @@ func readCSVFile(filePath string, separator rune) []types.LPPParticipant {
 		if i == 0 {
 			continue
 		}
-		if len(record) < 5 {
+		if len(record) < 6 {
 			slog.Error("CSV file entry is invalid", "record", record)
 			continue
 		}
@@ -153,9 +153,10 @@ func readCSVFile(filePath string, separator rune) []types.LPPParticipant {
 				Email: record[2],
 				Name:  record[3],
 			},
+			Cohort:    record[4],
 			StudyData: make(map[string]string),
 		}
-		for i := 4; i < len(record); i++ {
+		for i := 5; i < len(record); i++ {
 			p.StudyData[colNames[i]] = record[i]
 		}
 		participants = append(participants, p)
