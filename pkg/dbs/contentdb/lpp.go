@@ -104,12 +104,12 @@ func (dbService *ContentDBService) UpdateLPPParticipantInvitationSentAt(instance
 	return err
 }
 
-func (dbService *ContentDBService) UpdateLPPParticipantSubmissions(instanceID string, pid string, submissions map[string]time.Time) error {
+func (dbService *ContentDBService) UpdateLPPParticipantSubmissions(instanceID string, pid string, submissions map[string]time.Time, tempParticipantInfo *types.TempParticipantInfo) error {
 	ctx, cancel := dbService.getContext()
 	defer cancel()
 
 	filter := bson.M{"pid": pid}
-	update := bson.M{"$set": bson.M{"submissions": submissions}}
+	update := bson.M{"$set": bson.M{"submissions": submissions, "tempParticipantInfo": tempParticipantInfo}}
 	_, err := dbService.collectionLPP(instanceID).UpdateOne(ctx, filter, update)
 	return err
 }

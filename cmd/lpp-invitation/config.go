@@ -29,6 +29,9 @@ const (
 	ENV_INVITATION_EMAIL_TEMPLATE_PATH = "INVITATION_EMAIL_TEMPLATE_PATH"
 	ENV_INVITATION_EMAIL_SUBJECT       = "INVITATION_EMAIL_SUBJECT"
 
+	ENV_RUN_PARTICIPANT_CREATION = "RUN_PARTICIPANT_CREATION"
+	ENV_RUN_INVITATION_SENDING   = "RUN_INVITATION_SENDING"
+
 	defaultCSVFile   = "participants.csv"
 	defaultSeparator = ";"
 )
@@ -42,6 +45,8 @@ type Config struct {
 	Separator                   string
 	InvitationEmailTemplatePath string
 	InvitationEmailSubject      string
+	RunParticipantCreation      bool
+	RunInvitationSending        bool
 }
 
 func readConfig() Config {
@@ -61,6 +66,9 @@ func readConfig() Config {
 
 	conf.InvitationEmailTemplatePath = os.Getenv(ENV_INVITATION_EMAIL_TEMPLATE_PATH)
 	conf.InvitationEmailSubject = os.Getenv(ENV_INVITATION_EMAIL_SUBJECT)
+
+	conf.RunParticipantCreation = os.Getenv(ENV_RUN_PARTICIPANT_CREATION) == "true"
+	conf.RunInvitationSending = os.Getenv(ENV_RUN_INVITATION_SENDING) == "true"
 
 	return conf
 }

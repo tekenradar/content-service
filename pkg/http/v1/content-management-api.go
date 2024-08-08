@@ -119,7 +119,10 @@ func (h *HttpEndpoints) LPPSubmissionHandl(c *gin.Context) {
 	newSubmissions := p.Submissions
 	newSubmissions[req.Response.Key] = time.Now()
 
-	err = h.contentDB.UpdateLPPParticipantSubmissions(InstanceID, p.PID, newSubmissions)
+	err = h.contentDB.UpdateLPPParticipantSubmissions(InstanceID, p.PID, newSubmissions, &types.TempParticipantInfo{
+		ID:        req.ParticipantState.ParticipantID,
+		EnteredAt: req.ParticipantState.EnteredAt,
+	})
 	if err != nil {
 		logger.Error.Printf("error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
