@@ -13,9 +13,6 @@ const (
 	ENV_CONFIG_PATH         = "CONFIG_PATH"
 	ENV_CONTENT_DB_USERNAME = "CONTENT_DB_USERNAME"
 	ENV_CONTENT_DB_PASSWORD = "CONTENT_DB_PASSWORD"
-
-	defaultCSVFile   = "participants.csv"
-	defaultSeparator = ";"
 )
 
 type Config struct {
@@ -101,5 +98,4 @@ func secretsOverride() {
 	if dbPassword := os.Getenv(ENV_CONTENT_DB_PASSWORD); dbPassword != "" {
 		conf.ContentDBConfig.Password = dbPassword
 	}
-
 }
