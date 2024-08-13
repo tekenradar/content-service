@@ -133,6 +133,9 @@ func (h *HttpEndpoints) getLPPParticipantsHandl(c *gin.Context) {
 		return
 	}
 
-	lppParticipant.ContactInfos = nil
+	lppParticipant.ContactInfos = &types.LPPParticipantContactInfos{
+		Email: "",
+		Name:  lppParticipant.ContactInfos.Name,
+	}
 	c.JSON(http.StatusOK, lppParticipant)
 }
