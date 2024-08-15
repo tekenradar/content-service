@@ -108,8 +108,14 @@ func (h *HttpEndpoints) LPPSubmissionHandl(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	lppID, ok := req.Response.Context["lppID"]
+	if !ok {
+		logger.Error.Printf("error: missing lppID in response context")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing lppID in response context"})
+		return
+	}
 
-	p, err := h.contentDB.GetLPPParticipant(InstanceID, "todo")
+	p, err := h.contentDB.GetLPPParticipant(InstanceID, lppID)
 	if err != nil {
 		logger.Error.Printf("error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -117,6 +123,9 @@ func (h *HttpEndpoints) LPPSubmissionHandl(c *gin.Context) {
 	}
 
 	newSubmissions := p.Submissions
+	if newSubmissions == nil {
+		newSubmissions = make(map[string]time.Time)
+	}
 	newSubmissions[req.Response.Key] = time.Now()
 
 	err = h.contentDB.UpdateLPPParticipantSubmissions(InstanceID, p.PID, newSubmissions, &types.TempParticipantInfo{
