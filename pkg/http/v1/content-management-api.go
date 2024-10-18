@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/h2non/filetype"
 	"github.com/influenzanet/study-service/pkg/studyengine"
+	studyTypes "github.com/influenzanet/study-service/pkg/types"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tekenradar/content-service/pkg/http/helpers"
@@ -128,6 +129,12 @@ func (h *HttpEndpoints) LPPSubmissionHandl(c *gin.Context) {
 	}
 	newSubmissions[req.Response.Key] = time.Now()
 
+	// Stop flow if participant does not want to continue
+	shouldStop := shouldStopFlow(req.Response)
+	if shouldStop {
+		newSubmissions["LPplus_part3"] = time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
+	}
+
 	err = h.contentDB.UpdateLPPParticipantSubmissions(InstanceID, p.PID, newSubmissions, &types.TempParticipantInfo{
 		ID:        req.ParticipantState.ParticipantID,
 		EnteredAt: req.ParticipantState.EnteredAt,
@@ -141,6 +148,29 @@ func (h *HttpEndpoints) LPPSubmissionHandl(c *gin.Context) {
 	logger.Info.Printf("LPP submission received for instance %s", InstanceID)
 	c.JSON(http.StatusOK, gin.H{
 		"message": "LPP submission registered successfully"})
+}
+
+func shouldStopFlow(surveyResponse studyTypes.SurveyResponse) bool {
+	if surveyResponse.Key != "LPplus_part1" {
+		return false
+	}
+
+	for _, item := range surveyResponse.Responses {
+		if item.Key == "LPplus_part1.LPplusUitnTR" {
+
+			// Check if the response key is "rg" and it has a nested item with key "scg"
+			if item.Response.Key == "rg" && len(item.Response.Items) > 0 {
+				for _, subItem := range item.Response.Items {
+					if subItem.Key == "scg" && len(subItem.Items) > 0 && subItem.Items[0].Key == "b" {
+						return true
+					}
+				}
+			}
+			break
+		}
+	}
+
+	return false
 }
 
 func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {
