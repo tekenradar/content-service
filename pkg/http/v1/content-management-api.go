@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/h2non/filetype"
 	"github.com/influenzanet/study-service/pkg/studyengine"
-	studyTypes "github.com/influenzanet/study-service/pkg/types"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tekenradar/content-service/pkg/http/helpers"
@@ -25,7 +24,6 @@ func (h *HttpEndpoints) AddContentManagementAPI(rg *gin.RouterGroup) {
 	studyevents.Use(mw.HasValidAPIKey(h.apiKeys.readWrite))
 	{
 		studyevents.POST("/tb-map-point-aggregator", mw.RequirePayload(), h.addTBReportHandl)
-		studyevents.POST("/lpp-submission", mw.RequirePayload(), h.LPPSubmissionHandl)
 	}
 
 	instanceGroup := rg.Group("/:instanceID")
@@ -93,84 +91,6 @@ func (h *HttpEndpoints) addTBReportHandl(c *gin.Context) {
 	// prepare response
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Map Data successfully added to data base"})
-}
-
-func (h *HttpEndpoints) LPPSubmissionHandl(c *gin.Context) {
-	var req studyengine.ExternalEventPayload
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Error.Printf("error: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	InstanceID := req.InstanceID
-	err := helpers.CheckInstanceID(h.instanceIDs, InstanceID)
-	if err != nil {
-		logger.Error.Printf("error: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	lppID, ok := req.Response.Context["lppID"]
-	if !ok {
-		logger.Error.Printf("error: missing lppID in response context")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing lppID in response context"})
-		return
-	}
-
-	p, err := h.contentDB.GetLPPParticipant(InstanceID, lppID)
-	if err != nil {
-		logger.Error.Printf("error: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	newSubmissions := p.Submissions
-	if newSubmissions == nil {
-		newSubmissions = make(map[string]time.Time)
-	}
-	newSubmissions[req.Response.Key] = time.Now()
-
-	// Stop flow if participant does not want to continue
-	shouldStop := shouldStopFlow(req.Response)
-	if shouldStop {
-		newSubmissions["LPplus_part3"] = time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
-	}
-
-	err = h.contentDB.UpdateLPPParticipantSubmissions(InstanceID, p.PID, newSubmissions, &types.TempParticipantInfo{
-		ID:        req.ParticipantState.ParticipantID,
-		EnteredAt: req.ParticipantState.EnteredAt,
-	})
-	if err != nil {
-		logger.Error.Printf("error: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	logger.Info.Printf("LPP submission received for instance %s", InstanceID)
-	c.JSON(http.StatusOK, gin.H{
-		"message": "LPP submission registered successfully"})
-}
-
-func shouldStopFlow(surveyResponse studyTypes.SurveyResponse) bool {
-	if surveyResponse.Key != "LPplus_part1" {
-		return false
-	}
-
-	for _, item := range surveyResponse.Responses {
-		if item.Key == "LPplus_part1.LPplusUitnTR" {
-
-			// Check if the response key is "rg" and it has a nested item with key "scg"
-			if item.Response.Key == "rg" && len(item.Response.Items) > 0 {
-				for _, subItem := range item.Response.Items {
-					if subItem.Key == "scg" && len(subItem.Items) > 0 && subItem.Items[0].Key == "b" {
-						return true
-					}
-				}
-			}
-			break
-		}
-	}
-
-	return false
 }
 
 func (h *HttpEndpoints) loadTBMapDataHandl(c *gin.Context) {

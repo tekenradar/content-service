@@ -18,6 +18,7 @@ const (
 	ENV_CONTENT_SERVICE_LISTEN_PORT = "CONTENT_SERVICE_LISTEN_PORT"
 	ENV_CORS_ALLOW_ORIGINS          = "CORS_ALLOW_ORIGINS"
 	ENV_API_KEYS_READ_ONLY          = "API_KEYS_READ_ONLY"
+	ENV_API_KEYS_READ_WRITE         = "API_KEYS_READ_WRITE"
 	ENV_ASSETS_DIR                  = "ASSETS_DIR"
 	ENV_INSTANCE_IDS                = "INSTANCE_IDS"
 
@@ -52,7 +53,7 @@ func InitConfig() Config {
 	conf.Port = os.Getenv(ENV_CONTENT_SERVICE_LISTEN_PORT)
 	conf.AllowOrigins = strings.Split(os.Getenv(ENV_CORS_ALLOW_ORIGINS), ",")
 	conf.APIKeyForReadOnly = strings.Split(os.Getenv(ENV_API_KEYS_READ_ONLY), ",")
-	conf.APIKeyForRW = strings.Split("", ",")
+	conf.APIKeyForRW = strings.Split(os.Getenv(ENV_API_KEYS_READ_WRITE), ",")
 	conf.AssetsDir = os.Getenv(ENV_ASSETS_DIR)
 	conf.InstanceIDs = helpers.TrimSpace(strings.Split(os.Getenv(ENV_INSTANCE_IDS), ","))
 	helpers.CheckEmptyInstanceIDs(conf.InstanceIDs)

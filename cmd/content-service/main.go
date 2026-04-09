@@ -16,7 +16,6 @@ func healthCheckHandle(c *gin.Context) {
 }
 
 func main() {
-
 	conf := InitConfig()
 
 	logger.SetLevel(conf.LogLevel)
@@ -31,9 +30,8 @@ func main() {
 	// Start webserver
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
-		// AllowAllOrigins: true,
 		AllowOrigins:     conf.AllowOrigins,
-		AllowMethods:     []string{"GET"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type", "Content-Length", "Api-Key"},
 		ExposeHeaders:    []string{"Authorization", "Content-Type", "Content-Length"},
 		AllowCredentials: true,
@@ -44,6 +42,7 @@ func main() {
 
 	v1APIHandlers := v1.NewHTTPHandler(contentDBService, conf.APIKeyForReadOnly, conf.APIKeyForRW, conf.InstanceIDs, conf.MapDataCacheLifetime, conf.AssetsDir)
 	v1APIHandlers.AddContentAPI(v1Root)
+	v1APIHandlers.AddContentManagementAPI(v1Root)
 
 	logger.Info.Printf("gateway listening on port %s", conf.Port)
 	logger.Error.Fatal(router.Run(":" + conf.Port))
