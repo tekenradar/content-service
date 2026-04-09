@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/coneno/logger"
@@ -18,7 +19,8 @@ type MapDataCache struct {
 }
 
 var (
-	Cache map[string]map[int]MapDataCache
+	cacheMu sync.RWMutex
+	cache   = make(map[string]map[int]MapDataCache)
 )
 
 func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
@@ -29,12 +31,6 @@ func (h *HttpEndpoints) AddContentAPI(rg *gin.RouterGroup) {
 		data.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
 		{
 			data.GET("/tb-report", h.getTBReportMapDataHandl)
-		}
-
-		lpp := instanceGroup.Group("/lpp")
-		lpp.Use(mw.HasValidAPIKey(h.apiKeys.readOnly))
-		{
-			lpp.GET("/:pid", h.getLPPParticipantsHandl)
 		}
 	}
 	files := rg.Group("/files")
@@ -51,15 +47,15 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 	t := time.Now().AddDate(0, 0, -(n * 7)).Unix()
 	instanceID := c.Param("instanceID")
 
-	if Cache == nil {
-		Cache = make(map[string]map[int]MapDataCache)
-	} else {
-		if mdcache, ok := Cache[instanceID][n]; ok {
-			if time.Since(time.Unix(mdcache.LastUpdated, 0)).Seconds() < float64(h.mapDataStoringDuration) {
-				c.JSON(http.StatusOK, mdcache.Data)
-				return
-			}
+	cacheMu.RLock()
+	if mdcache, ok := cache[instanceID][n]; ok {
+		cacheMu.RUnlock()
+		if time.Since(time.Unix(mdcache.LastUpdated, 0)).Seconds() < float64(h.mapDataStoringDuration) {
+			c.JSON(http.StatusOK, mdcache.Data)
+			return
 		}
+	} else {
+		cacheMu.RUnlock()
 	}
 
 	//fetch data from DB
@@ -112,30 +108,15 @@ func (h *HttpEndpoints) getTBReportMapDataHandl(c *gin.Context) {
 		rmd.Series[index] = append(rmd.Series[index], md)
 	}
 
-	Cache[instanceID] = make(map[int]MapDataCache)
-	Cache[instanceID][n] = MapDataCache{
+	cacheMu.Lock()
+	if _, ok := cache[instanceID]; !ok {
+		cache[instanceID] = make(map[int]MapDataCache)
+	}
+	cache[instanceID][n] = MapDataCache{
 		LastUpdated: time.Now().Unix(),
 		Data:        rmd,
 	}
+	cacheMu.Unlock()
 
 	c.JSON(http.StatusOK, rmd)
-}
-
-func (h *HttpEndpoints) getLPPParticipantsHandl(c *gin.Context) {
-	instanceID := c.Param("instanceID")
-	pid := c.Param("pid")
-
-	//fetch data from DB
-	lppParticipant, err := h.contentDB.GetLPPParticipant(instanceID, pid)
-	if err != nil {
-		logger.Error.Printf("error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while fetching participant"})
-		return
-	}
-
-	lppParticipant.ContactInfos = &types.LPPParticipantContactInfos{
-		Email: "",
-		Name:  lppParticipant.ContactInfos.Name,
-	}
-	c.JSON(http.StatusOK, lppParticipant)
 }
